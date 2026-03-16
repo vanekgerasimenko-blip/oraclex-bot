@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>OracleX</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
+
+/* ════════════════════════════════════════
+   DESIGN TOKENS — всі змінні в одному місці
+   Щоб змінити тему — редагуй тільки тут
+════════════════════════════════════════ */
+:root{
+  /* ── Backgrounds ── */
+  --bg:        #060a12;   /* основний фон */
+  --card:      #0c1522;   /* фон карток */
+  --card2:     #101c2e;   /* фон вкладених елементів */
+
+  /* ── Brand Colors ── */
+  --g:         #00e5a0;   /* зелений акцент (YES, прибуток) */
+  --g2:        #00b87a;   /* темніший зелений */
+  --r:         #ff3057;   /* червоний акцент (NO, збиток) */
+  --gold:      #ffb800;   /* золотий (монети, streak) */
+  --gold2:     #ffd060;   /* світліший золотий */
+  --blue:      #0ea5e9;   /* блакитний (статистика) */
+  --purple:    #8b5cf6;   /* фіолетовий (challenge) */
+
+  /* ── Typography ── */
+  --text:      #e2f0ff;   /* основний текст */
+  --sub:       #4a6a8e;   /* вторинний текст */
+
+  /* ── Borders ── */
+  --b2:        rgba(255,255,255,.06);   /* тонкі межі */
+  --b-green:   rgba(0,229,160,.2);      /* зелена межа */
+  --b-gold:    rgba(255,184,0,.2);      /* золота межа */
+
+  /* ── Shadows / Glows ── */
+  --glow-g:    0 4px 20px rgba(0,229,160,.3);
+  --glow-r:    0 4px 20px rgba(255,48,87,.3);
+  --glow-gold: 0 4px 20px rgba(255,184,0,.3);
+
+  /* ── Spacing ── */
+  --r-card:    16px;  /* border-radius карток */
+  --r-btn:     12px;  /* border-radius кнопок */
+  --r-pill:    20px;  /* border-radius пілюль */
+
+  /* ── Typography Scale ── */
+  --f-display: 'Barlow Condensed', sans-serif;
+  --f-body:    'Inter', sans-serif;
+
+  /* ── Animation ── */
+  --ease:      cubic-bezier(.4,0,.2,1);
+  --dur-fast:  .15s;
+  --dur-mid:   .28s;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
+
+/* ── iOS BOUNCE FIX ── */
+html{
+  position:fixed;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  /* prevent iOS rubber-band on the root */
+  overscroll-behavior:none;
+}
+body{
+  position:fixed;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Inter',sans-serif;
+  max-width:430px;
+  /* center on wide screens */
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  flex-direction:column;
+  /* iOS momentum only where we want it */
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:none;
+}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,160,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,.02) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0;}
+
+/* SCREENS */
+.screen{display:none;flex-direction:column;height:100%;position:relative;z-index:1;}
+.screen.active{display:flex;animation:fu var(--dur-mid) var(--ease);}
+@keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* TOPBAR */
+.tb{padding:10px 14px 8px;display:flex;align-items:center;gap:9px;z-index:80;background:linear-gradient(to bottom,rgba(6,10,18,.98) 80%,transparent);border-bottom:1px solid rgba(0,229,160,.07);flex-shrink:0;}
+.av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#122040,#0a1830);border:1.5px solid rgba(0,229,160,.3);display:flex;align-items:center;justify-content:center;font-size:16px;position:relative;flex-shrink:0;}
+.av .dot{position:absolute;bottom:0;right:0;width:9px;height:9px;border-radius:50%;background:var(--g);border:1.5px solid var(--bg);}
+.tb-mid{flex:1;}
+.tb-name{font-size:13px;font-weight:700;}
+.tb-sub{font-size:10px;color:var(--sub);display:flex;align-items:center;gap:4px;margin-top:1px;}
+.lvl{background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.2);border-radius:5px;padding:1px 6px;font-size:9px;font-weight:800;color:var(--gold);}
+.bal-pill{display:flex;align-items:center;gap:5px;background:rgba(0,229,160,.07);border:1px solid var(--b-green);border-radius:var(--r-pill);padding:5px 11px;flex-shrink:0;}
+.bal-n{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--g);}
+.streak-chip{font-size:13px;font-weight:800;color:var(--gold2);font-family:'Barlow Condensed',sans-serif;flex-shrink:0;}
+.back-btn{font-size:24px;cursor:pointer;color:var(--sub);padding:0 4px;flex-shrink:0;}
+.tb-title{flex:1;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:900;letter-spacing:.5px;}
+
+/* BOTTOM NAV */
+.bnav{background:rgba(6,10,18,.97);backdrop-filter:blur(20px);border-top:1px solid rgba(0,229,160,.08);display:flex;flex-shrink:0;z-index:90;padding-bottom:env(safe-area-inset-bottom);}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;padding:9px 0 7px;cursor:pointer;gap:3px;transition:opacity var(--dur-fast);}
+.ni-ic{font-size:20px;transition:transform var(--dur-fast) var(--ease),filter var(--dur-fast) var(--ease);}
+.ni-lb{font-size:9px;font-weight:700;color:var(--sub);font-family:var(--f-display);transition:color var(--dur-fast);}
+.ni.active .ni-lb{color:var(--g);}
+.ni.active .ni-ic{filter:drop-shadow(0 0 4px rgba(0,229,160,.7));transform:scale(1.1);}
+.ni:active .ni-ic{transform:scale(.88)!important;}
+
+/* SCROLL */
+.sc{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
+.sc::-webkit-scrollbar{display:none;}
+.bpad{height:16px;}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TIKTOK FEED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#s-feed{overflow:hidden;}
+
+/* vertical scroll-snap container */
+#feed-scroll{
+  flex:1;
+  overflow-y:scroll;
+  overflow-x:hidden;
+  scroll-snap-type:y mandatory;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  min-height:0;
+}
+#feed-scroll::-webkit-scrollbar{display:none;}
+
+/* each card = full viewport slot */
+.scard{
+  scroll-snap-align:start;
+  scroll-snap-stop:always;
+  width:100%;
+  height:100%; /* filled by JS */
+  flex-shrink:0;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  background:var(--card);
+  touch-action:pan-y; /* allow vertical scroll */
+}
+
+/* FULL BG visual */
+.sv{
+  position:absolute;
+  inset:0;
+  overflow:hidden;
+  z-index:0;
+}
+.sv-noise{
+  position:absolute;inset:0;
+  opacity:.08;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:200px 200px;
+  z-index:1;
+}
+.sv-icon{
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-70%);
+  font-size:100px;
+  opacity:.18;
+  z-index:1;
+  filter:blur(2px);
+  pointer-events:none;
+}
+.sv-ov{
+  position:absolute;inset:0;
+  background:linear-gradient(
+    to bottom,
+    rgba(6,10,18,.5) 0%,
+    transparent 30%,
+    transparent 45%,
+    rgba(6,10,18,.97) 75%
+  );
+  z-index:1;
+}
+.sv-cat{
+  position:absolute;top:14px;left:14px;z-index:3;
+  background:rgba(6,10,18,.7);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.1);border-radius:8px;
+  padding:4px 10px;font-size:11px;font-weight:700;
+}
+.sv-timer{
+  position:absolute;top:14px;right:14px;z-index:3;
+  background:rgba(6,10,18,.7);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,184,0,.3);border-radius:8px;
+  padding:4px 10px;font-size:11px;font-weight:700;color:var(--gold2);
+  display:flex;align-items:center;gap:4px;
+}
+.tdot{width:6px;height:6px;border-radius:50%;background:var(--gold2);animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* CONTENT sits at bottom */
+.sb{
+  position:absolute;
+  bottom:0;left:0;right:0;
+  z-index:2;
+  padding:16px 16px 14px;
+}
+.sq{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:26px;font-weight:900;line-height:1.15;
+  color:var(--text);margin-bottom:6px;
+}
+.ss{font-size:12px;color:rgba(226,240,255,.7);line-height:1.45;margin-bottom:10px;}
+.pt{height:6px;border-radius:4px;background:rgba(255,48,87,.25);overflow:hidden;margin-bottom:6px;}
+.pf{height:100%;border-radius:4px;background:linear-gradient(to right,var(--g2),var(--g));}
+.pr{display:flex;justify-content:space-between;margin-bottom:10px;}
+.py{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--g);}
+.pn{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--r);}
+
+/* social proof */
+.soc{display:flex;align-items:center;gap:6px;margin-bottom:12px;font-size:11px;color:rgba(226,240,255,.6);}
+.savs{display:flex;}
+.sa{width:18px;height:18px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:10px;border:1.5px solid rgba(255,255,255,.1);margin-right:-5px;}
+.sb2{color:var(--gold2);font-weight:700;}
+
+/* BIG YES / NO buttons */
+.rw{display:flex;gap:10px;}
+.rwy{
+  flex:1;padding:14px 10px;border-radius:var(--r-btn);border:none;cursor:pointer;
+  background:linear-gradient(135deg,#005533,#009960);
+  color:#fff;font-family:var(--f-display);
+  font-size:22px;font-weight:900;letter-spacing:.5px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  box-shadow:var(--glow-g);
+  transition:transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.rwn{
+  flex:1;padding:14px 10px;border-radius:var(--r-btn);border:none;cursor:pointer;
+  background:linear-gradient(135deg,#770020,#bb1a36);
+  color:#fff;font-family:var(--f-display);
+  font-size:22px;font-weight:900;letter-spacing:.5px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  box-shadow:var(--glow-r);
+  transition:transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.rwy:active,.rwn:active{transform:scale(.95);}
+.rwy.voted{background:var(--g);color:#03120a;box-shadow:0 4px 24px rgba(0,229,160,.5);}
+.rwn.voted{background:var(--r);color:#fff;box-shadow:0 4px 24px rgba(255,48,87,.5);}
+.rwp{font-size:11px;opacity:.8;font-weight:600;letter-spacing:0;}
+
+/* ── CREATE BUTTON IN NAV ── */
+.ni-create{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:4px 0 7px;cursor:pointer;gap:3px;
+}
+.ni-create-circle{
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(135deg,var(--g2),var(--g));
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;font-weight:300;color:#03120a;
+  margin-top:-16px;
+  border:2px solid var(--bg);
+  box-shadow:0 0 20px rgba(0,229,160,.5);
+  transition:transform var(--dur-fast) var(--ease);
+  line-height:1;
+}
+.ni-create:active .ni-create-circle{transform:scale(.9);}
+.ni-create-lb{
+  font-size:9px;font-weight:800;color:var(--g);
+  font-family:var(--f-display);letter-spacing:.3px;
+}
+
+/* ── CREATE FORM ── */
+.cf-section{padding:0 14px 14px;}
+.cf-label{
+  font-family:var(--f-display);font-size:13px;font-weight:700;
+  color:var(--text);margin-bottom:4px;letter-spacing:.3px;
+}
+.cf-req{color:var(--r);}
+.cf-hint{font-size:10px;color:var(--sub);margin-bottom:8px;line-height:1.5;}
+.cf-input{
+  width:100%;background:var(--card);
+  border:1px solid var(--b2);border-radius:12px;
+  padding:12px 14px;color:var(--text);
+  font-family:var(--f-body);font-size:14px;
+  resize:none;outline:none;
+  transition:border-color var(--dur-fast);
+  caret-color:var(--g);
+}
+.cf-input:focus{border-color:var(--g);}
+.cf-input::placeholder{color:var(--sub);}
+.cf-textarea{height:72px;line-height:1.5;}
+.cf-counter{font-size:10px;color:var(--sub);text-align:right;margin-top:4px;}
+
+.cf-cats{display:flex;flex-wrap:wrap;gap:7px;}
+.cf-cat{
+  padding:7px 14px;border-radius:20px;
+  background:var(--card);border:1px solid var(--b2);
+  font-size:12px;font-weight:600;color:var(--sub);cursor:pointer;
+  transition:all var(--dur-fast);
+}
+.cf-cat.active{background:rgba(0,229,160,.12);border-color:var(--g);color:var(--g);}
+
+.cf-icons{display:flex;flex-wrap:wrap;gap:8px;}
+.cf-icon{
+  width:42px;height:42px;border-radius:11px;
+  background:var(--card);border:1px solid var(--b2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;cursor:pointer;
+  transition:all var(--dur-fast);
+}
+.cf-icon.active{background:rgba(0,229,160,.12);border-color:var(--g);}
+
+.cf-deadlines{display:flex;gap:7px;flex-wrap:wrap;}
+.cf-dl{
+  padding:7px 14px;border-radius:20px;
+  background:var(--card);border:1px solid var(--b2);
+  font-size:12px;font-weight:700;color:var(--sub);cursor:pointer;
+  transition:all var(--dur-fast);font-family:var(--f-display);
+}
+.cf-dl.active{background:rgba(255,184,0,.12);border-color:var(--gold);color:var(--gold2);}
+
+.cf-starter-row{display:flex;flex-direction:column;gap:10px;}
+.cf-side-btns{display:flex;gap:8px;}
+.cf-side{
+  flex:1;padding:11px;border-radius:12px;border:none;cursor:pointer;
+  font-family:var(--f-display);font-size:17px;font-weight:900;
+  transition:all var(--dur-fast);
+}
+.cf-yes{background:rgba(0,229,160,.1);color:var(--g);border:1px solid rgba(0,229,160,.25);}
+.cf-no {background:rgba(255,48,87,.1); color:var(--r);border:1px solid rgba(255,48,87,.25);}
+.cf-yes.active{background:var(--g);color:#03120a;box-shadow:var(--glow-g);}
+.cf-no.active {background:var(--r);color:#fff;   box-shadow:var(--glow-r);}
+
+.cf-amount-row{display:flex;align-items:center;gap:8px;}
+.cf-amount-label{font-size:12px;color:var(--sub);white-space:nowrap;}
+.cf-amounts{display:flex;gap:6px;}
+.cf-am{
+  padding:6px 12px;border-radius:20px;border:1px solid var(--b2);
+  background:var(--card);color:var(--sub);
+  font-family:var(--f-display);font-size:13px;font-weight:700;cursor:pointer;
+  transition:all var(--dur-fast);
+}
+.cf-am.active{background:rgba(255,184,0,.12);border-color:var(--gold);color:var(--gold2);}
+
+/* PREVIEW */
+.cf-preview{
+  background:var(--card);border:1px solid rgba(0,229,160,.2);
+  border-radius:16px;padding:14px;
+  box-shadow:0 0 20px rgba(0,229,160,.06);
+}
+.cf-prev-icon{font-size:32px;margin-bottom:8px;}
+.cf-prev-q{
+  font-family:var(--f-display);font-size:18px;font-weight:800;
+  color:var(--text);line-height:1.3;margin-bottom:12px;
+}
+.cf-prev-bar{display:flex;justify-content:space-between;}
+.cf-prev-yes{font-size:12px;font-weight:700;color:var(--g);}
+.cf-prev-no {font-size:12px;font-weight:700;color:var(--r);}
+
+/* SUBMIT */
+.cf-submit{
+  width:100%;padding:16px;border-radius:14px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--g2),var(--g));
+  color:#03120a;font-family:var(--f-display);
+  font-size:18px;font-weight:900;letter-spacing:.5px;
+  box-shadow:var(--glow-g);
+  transition:all var(--dur-fast) var(--ease);
+}
+.cf-submit:disabled{
+  background:var(--card2);color:var(--sub);
+  box-shadow:none;cursor:not-allowed;
+}
+.cf-submit:not(:disabled):active{transform:scale(.97);}
+.pool-section{margin-bottom:10px;}
+.pool-bar-wrap{
+  display:flex;height:8px;border-radius:4px;overflow:hidden;
+  background:rgba(255,255,255,.06);margin-bottom:6px;
+}
+.pool-bar-yes{background:linear-gradient(to right,var(--g2),var(--g));transition:width .4s var(--ease);}
+.pool-bar-no {background:linear-gradient(to right,var(--r2),var(--r));transition:width .4s var(--ease);}
+.pool-labels{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.pool-lbl-yes{display:flex;align-items:center;gap:6px;}
+.pool-lbl-no {display:flex;align-items:center;gap:6px;}
+.pool-pct-y{font-family:var(--f-display);font-size:14px;font-weight:800;color:var(--g);}
+.pool-pct-n{font-family:var(--f-display);font-size:14px;font-weight:800;color:var(--r);}
+.pool-sum{font-size:11px;color:rgba(226,240,255,.6);font-weight:600;}
+.pool-total{font-size:10px;color:var(--sub);text-align:center;}
+.pool-total b{color:var(--gold2);}
+
+/* ── BET SIZE SELECTOR ── */
+.bet-size-row{
+  display:flex;align-items:center;gap:5px;
+  margin-bottom:10px;flex-wrap:wrap;
+}
+.bet-label{font-size:11px;color:var(--sub);font-weight:600;white-space:nowrap;}
+.bet-chip{
+  padding:5px 11px;border-radius:20px;border:1px solid var(--b2);
+  background:var(--card2);color:var(--sub);
+  font-family:var(--f-display);font-size:13px;font-weight:700;cursor:pointer;
+  transition:all var(--dur-fast) var(--ease);
+}
+.bet-chip:active{transform:scale(.92);}
+.bc-active{
+  background:rgba(0,229,160,.15);
+  border-color:var(--g);color:var(--g);
+  box-shadow:0 0 10px rgba(0,229,160,.2);
+}
+.bet-bal{font-size:10px;color:var(--sub);margin-left:auto;white-space:nowrap;}
+.bet-bal b{color:var(--gold2);}
+
+/* ── BET PENDING STATE ── */
+.bet-pending{
+  display:flex;align-items:center;gap:10px;
+  background:rgba(0,229,160,.07);
+  border:1px solid rgba(0,229,160,.2);
+  border-radius:var(--r-btn);padding:12px;
+}
+.bp-side{
+  font-family:var(--f-display);font-size:20px;font-weight:900;
+  color:var(--g);white-space:nowrap;
+}
+.bp-info{flex:1;}
+.bp-amount{font-size:11px;color:var(--sub);}
+.bp-payout{font-size:11px;color:var(--sub);margin-top:2px;}
+.resolve-btn{
+  background:linear-gradient(135deg,rgba(255,184,0,.2),rgba(255,184,0,.1));
+  border:1px solid rgba(255,184,0,.3);border-radius:9px;
+  padding:8px 12px;font-family:var(--f-display);font-size:13px;font-weight:800;
+  color:var(--gold2);cursor:pointer;white-space:nowrap;
+  transition:all var(--dur-fast) var(--ease);
+}
+.resolve-btn:active{transform:scale(.95);}
+
+/* ── BET DONE STATES ── */
+.bet-done{
+  width:100%;padding:14px;border-radius:var(--r-btn);text-align:center;
+  font-family:var(--f-display);font-size:22px;font-weight:900;letter-spacing:.5px;
+}
+.bet-done-sub{font-size:12px;font-weight:600;margin-top:4px;letter-spacing:0;}
+.win-done{
+  background:rgba(0,229,160,.12);border:1px solid rgba(0,229,160,.3);
+  color:var(--g);box-shadow:var(--glow-g);
+}
+.loss-done{
+  background:rgba(255,48,87,.1);border:1px solid rgba(255,48,87,.25);
+  color:var(--r);
+}
+.refund-done{
+  background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.25);
+  color:var(--gold2);
+}
+  position:absolute;inset:0;z-index:5;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(6,10,18,.6);backdrop-filter:blur(4px);
+  font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:900;
+  letter-spacing:2px;gap:8px;
+}
+.voted-ov.yes-v{color:var(--g);text-shadow:0 0 40px rgba(0,229,160,.6);}
+.voted-ov.no-v{color:var(--r);text-shadow:0 0 40px rgba(255,48,87,.6);}
+.voted-pts{font-size:22px;opacity:.8;}
+
+/* scroll progress dots */
+.feed-dots{
+  position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:5px;z-index:4;
+}
+.fdot{width:4px;height:4px;border-radius:2px;background:rgba(255,255,255,.25);transition:.3s;}
+.fdot.active{height:16px;background:var(--g);border-radius:2px;}
+
+/* scroll hint */
+.scroll-hint{
+  position:absolute;bottom:6px;left:50%;transform:translateX(-50%);
+  z-index:3;font-size:11px;color:rgba(255,255,255,.35);
+  display:flex;flex-direction:column;align-items:center;gap:1px;
+  animation:fadeHint 3s ease forwards;
+}
+@keyframes fadeHint{0%,60%{opacity:1}100%{opacity:0}}
+.sh-arrow{font-size:16px;animation:bounce2 .8s ease-in-out infinite alternate;}
+@keyframes bounce2{from{transform:translateY(0)}to{transform:translateY(4px)}}
+
+/* EMPTY STATE */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;padding:24px;text-align:center;}
+.empty-ico{font-size:60px;animation:bob .9s ease-in-out infinite alternate;}
+@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-8px)}}
+.empty-t{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;}
+.empty-s{font-size:12px;color:var(--sub);line-height:1.6;}
+.reload-btn{background:linear-gradient(135deg,#006644,#00a86a);border:none;border-radius:13px;padding:12px 28px;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(0,200,100,.3);}
+
+/* RESULT FLASH */
+.rf{position:fixed;inset:0;z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .12s;}
+.rf.show{opacity:1;}
+.rf.yf{background:rgba(0,229,160,.1);}
+.rf.nf{background:rgba(255,48,87,.1);}
+.rf.sf{background:rgba(74,106,142,.06);}
+.rf-l{font-family:'Barlow Condensed',sans-serif;font-size:52px;font-weight:900;letter-spacing:2px;}
+.yf .rf-l{color:var(--g);text-shadow:0 0 30px rgba(0,229,160,.6);}
+.nf .rf-l{color:var(--r);text-shadow:0 0 30px rgba(255,48,87,.6);}
+.sf .rf-l{color:var(--sub);}
+.rf-p{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;margin-top:5px;color:var(--g);}
+.nf .rf-p{color:var(--r);}
+
+/* COIN BURST */
+.cb{position:fixed;pointer-events:none;z-index:600;font-size:22px;font-weight:900;font-family:'Barlow Condensed',sans-serif;color:var(--g);animation:cbUp .9s ease forwards;}
+@keyframes cbUp{0%{opacity:1;transform:translateY(0) scale(1.2)}100%{opacity:0;transform:translateY(-80px) scale(.8)}}
+.cp{position:fixed;pointer-events:none;z-index:600;font-size:16px;animation:cpOut .8s ease forwards;}
+@keyframes cpOut{0%{opacity:1;transform:translate(0,0)}100%{opacity:0;transform:var(--e)}}
+
+/* STREAK TOAST */
+.st{position:fixed;top:58px;left:50%;transform:translateX(-50%) translateY(-80px);background:linear-gradient(135deg,rgba(255,184,0,.14),rgba(255,208,96,.07));border:1px solid rgba(255,184,0,.28);border-radius:14px;padding:9px 20px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--gold2);z-index:400;transition:transform .3s cubic-bezier(.4,0,.2,1);white-space:nowrap;box-shadow:0 4px 20px rgba(255,184,0,.2);}
+.st.show{transform:translateX(-50%) translateY(0);}
+.st.bad{background:rgba(255,48,87,.15);border-color:rgba(255,48,87,.3);color:var(--r);box-shadow:0 4px 20px rgba(255,48,87,.2);}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   HOME SCREEN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.daily{margin:8px 14px 6px;background:linear-gradient(135deg,rgba(0,229,160,.07),rgba(14,165,233,.04));border:1px solid rgba(0,229,160,.18);border-radius:14px;padding:11px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:.15s;position:relative;overflow:hidden;}
+.daily::after{content:'';position:absolute;right:-10px;top:-10px;width:70px;height:70px;background:radial-gradient(circle,rgba(0,229,160,.12),transparent 70%);border-radius:50%;}
+.daily:active{transform:scale(.98);}
+.d-ico{font-size:26px;animation:bob .9s ease-in-out infinite alternate;}
+.d-t{flex:1;}
+.d-title{font-size:13px;font-weight:700;color:var(--g);}
+.d-sub{font-size:10px;color:var(--sub);margin-top:1px;}
+.d-btn{background:var(--g);border-radius:9px;padding:6px 12px;font-size:11px;font-weight:800;color:#03120a;font-family:'Barlow Condensed',sans-serif;box-shadow:0 0 14px rgba(0,229,160,.3);flex-shrink:0;}
+
+.stats{display:flex;gap:7px;padding:6px 14px 10px;}
+.sbox{flex:1;background:var(--card);border:1px solid var(--b2);border-radius:12px;padding:9px 8px;text-align:center;}
+.sv2{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;line-height:1;}
+.sv2.g{color:var(--g);}
+.sv2.gold{color:var(--gold);}
+.sv2.b{color:var(--blue);}
+.sv2.r{color:var(--r);}
+.sl{font-size:9px;color:var(--sub);margin-top:3px;text-transform:uppercase;letter-spacing:.5px;}
+
+.rtabs{display:flex;gap:6px;padding:0 14px 10px;overflow-x:auto;scrollbar-width:none;}
+.rtabs::-webkit-scrollbar{display:none;}
+.rtab{flex-shrink:0;padding:6px 12px;border-radius:9px;background:var(--card);border:1px solid var(--b2);font-size:12px;font-weight:600;color:var(--sub);cursor:pointer;transition:.15s;display:flex;align-items:center;gap:4px;white-space:nowrap;}
+.rtab.active{background:rgba(0,229,160,.1);border-color:rgba(0,229,160,.3);color:var(--g);}
+.rcnt{background:rgba(0,229,160,.15);border-radius:5px;padding:1px 5px;font-size:9px;font-weight:800;color:var(--g);}
+
+.shdr{display:flex;align-items:center;justify-content:space-between;padding:0 14px 8px;}
+.stitle{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:var(--sub);letter-spacing:1px;text-transform:uppercase;}
+.slink{font-size:11px;color:var(--g);cursor:pointer;font-weight:600;}
+
+.feed-list{padding:0 14px;display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
+.fi{background:var(--card);border:1px solid var(--b2);border-radius:12px;padding:10px 13px;display:flex;align-items:center;gap:10px;}
+.fi-av{font-size:20px;}
+.fi-tx{flex:1;font-size:12px;color:var(--sub);line-height:1.4;}
+.fi-tx b{color:var(--text);}
+.fi-pt{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;}
+.win{color:var(--g);}
+.lose{color:var(--r);}
+
+/* HOME MARKET CARDS */
+.pcards{padding:0 14px;display:flex;flex-direction:column;gap:10px;}
+.pcard{background:var(--card);border:1px solid var(--b2);border-radius:16px;overflow:hidden;position:relative;transition:.15s;}
+.pcard:active{transform:scale(.99);}
+.ptag{position:absolute;top:10px;right:10px;font-size:9px;font-weight:800;padding:2px 7px;border-radius:5px;letter-spacing:.5px;}
+.t-fl{background:rgba(255,184,0,.12);color:var(--gold);border:1px solid rgba(255,184,0,.25);}
+.t-me{background:rgba(139,92,246,.12);color:#a78bfa;border:1px solid rgba(139,92,246,.25);}
+.t-ho{background:rgba(255,48,87,.1);color:#ff6080;border:1px solid rgba(255,48,87,.2);}
+.t-ne{background:rgba(0,229,160,.1);color:var(--g);border:1px solid rgba(0,229,160,.2);}
+.pcb{padding:12px 14px 10px;}
+.pcm{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
+.pcc{width:32px;height:32px;border-radius:9px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;border:1px solid var(--b2);}
+.pcq{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--text);line-height:1.25;padding-right:52px;}
+.pcs{font-size:11px;color:var(--sub);line-height:1.4;margin-bottom:10px;}
+.yn{display:flex;gap:7px;padding:0 14px 10px;}
+.yb{flex:1;padding:11px 8px;border-radius:12px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;letter-spacing:.5px;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:1px;}
+.yb:active{transform:scale(.95);}
+.yes-b{background:linear-gradient(135deg,#005533,#009960);color:#fff;box-shadow:0 3px 14px rgba(0,200,100,.3);}
+.no-b{background:linear-gradient(135deg,#770020,#bb1a36);color:#fff;box-shadow:0 3px 14px rgba(255,30,70,.3);}
+.yb.vy{background:var(--g);color:#03120a;}
+.yb.vn{background:var(--r);color:#fff;}
+.ys{font-size:9px;opacity:.8;font-weight:600;letter-spacing:0;}
+.timer-row2{display:flex;align-items:center;justify-content:space-between;padding:0 14px 11px;}
+.tv{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:var(--sub);}
+.ch{font-size:11px;font-weight:700;color:var(--purple);cursor:pointer;}
+.vo{position:absolute;inset:0;background:rgba(6,10,18,.75);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;font-size:28px;border-radius:16px;z-index:5;}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   LEADERBOARD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.lb-tabs{display:flex;padding:0 14px 12px;gap:0;}
+.lb-tab{flex:1;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;border:1px solid var(--b2);color:var(--sub);transition:.15s;}
+.lb-tab:first-child{border-radius:10px 0 0 10px;}
+.lb-tab:last-child{border-radius:0 10px 10px 0;}
+.lb-tab.active{background:rgba(0,229,160,.1);border-color:rgba(0,229,160,.3);color:var(--g);}
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:6px;padding:0 14px 18px;}
+.pod{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.pod-av{border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--b2);position:relative;}
+.pod-av.p1{width:62px;height:62px;font-size:28px;border-color:var(--gold2);box-shadow:0 0 20px rgba(255,184,0,.35);}
+.pod-av.p2{width:50px;height:50px;font-size:22px;}
+.pod-av.p3{width:50px;height:50px;font-size:22px;}
+.pod-crown{position:absolute;top:-14px;font-size:18px;}
+.pod-n{font-size:11px;font-weight:700;}
+.pod-p{font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--gold2);}
+.pod-base{border-radius:10px 10px 0 0;width:74px;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;padding-top:8px;}
+.pb1{height:64px;background:linear-gradient(to top,rgba(255,184,0,.18),rgba(255,184,0,.02));color:var(--gold2);border:1px solid rgba(255,184,0,.2);}
+.pb2{height:48px;background:linear-gradient(to top,rgba(148,163,184,.12),transparent);color:#94a3b8;border:1px solid rgba(148,163,184,.1);}
+.pb3{height:38px;background:linear-gradient(to top,rgba(217,119,6,.12),transparent);color:#d97706;border:1px solid rgba(217,119,6,.1);}
+.lb-list{padding:0 14px;display:flex;flex-direction:column;gap:7px;}
+.lb-row{background:var(--card);border:1px solid var(--b2);border-radius:13px;padding:11px 13px;display:flex;align-items:center;gap:11px;}
+.lb-row.me{border-color:rgba(0,229,160,.3);background:rgba(0,229,160,.05);}
+.lb-rk{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:var(--sub);width:22px;}
+.lb-av{font-size:22px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;}
+.lb-in{flex:1;}
+.lb-nm{font-size:13px;font-weight:700;}
+.lb-mt{font-size:10px;color:var(--sub);margin-top:2px;}
+.lb-pt{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:var(--gold2);}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PROFILE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.ph{padding:16px 14px 12px;display:flex;flex-direction:column;align-items:center;gap:7px;}
+.pav{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,rgba(0,229,160,.2),rgba(14,165,233,.1));display:flex;align-items:center;justify-content:center;font-size:34px;border:2px solid rgba(0,229,160,.25);box-shadow:0 0 24px rgba(0,229,160,.15);}
+.pnm{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;}
+.plv{background:linear-gradient(135deg,rgba(0,229,160,.12),rgba(14,165,233,.08));border:1px solid rgba(0,229,160,.22);border-radius:20px;padding:5px 16px;font-size:12px;font-weight:700;color:var(--g);}
+.pxp{width:calc(100% - 28px);background:rgba(255,255,255,.05);border-radius:20px;height:5px;overflow:hidden;margin-top:3px;}
+.pxpf{height:100%;background:linear-gradient(to right,var(--g2),var(--g));border-radius:20px;width:63%;}
+.pxt{font-size:10px;color:var(--sub);margin-top:2px;}
+
+.wr{position:relative;width:76px;height:76px;flex-shrink:0;}
+.wr svg{width:76px;height:76px;transform:rotate(-90deg);}
+.wr-bg{fill:none;stroke:rgba(255,255,255,.07);stroke-width:7;}
+.wr-f{fill:none;stroke:var(--g);stroke-width:7;stroke-linecap:round;stroke-dasharray:209;stroke-dashoffset:77;}
+.wr-n{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.wr-pct{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:900;color:var(--g);line-height:1;}
+.wr-l{font-size:8px;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;}
+
+.psr{display:flex;gap:7px;padding:0 14px 12px;}
+.sk-card{margin:0 14px 12px;background:var(--card);border:1px solid var(--b2);border-radius:14px;padding:12px;display:flex;align-items:center;gap:12px;}
+.sk-f{font-size:28px;animation:bob .9s ease-in-out infinite alternate;}
+.sk-i{flex:1;}
+.sk-v{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:var(--gold2);}
+.sk-s{font-size:10px;color:var(--sub);margin-top:1px;}
+.sk-d{display:flex;gap:4px;margin-top:7px;}
+.sd{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.07);}
+.sd.on{background:var(--gold2);box-shadow:0 0 6px rgba(255,208,96,.6);}
+.sd.cur{background:transparent;border:2px solid var(--gold2);animation:sdp 1s infinite;}
+@keyframes sdp{0%,100%{box-shadow:0 0 0 0 rgba(255,208,96,.4)}50%{box-shadow:0 0 0 3px rgba(255,208,96,0)}}
+
+.bg-sect{padding:0 14px 12px;}
+.bg-t{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:var(--sub);letter-spacing:1px;text-transform:uppercase;margin-bottom:9px;}
+.bg-grid{display:flex;gap:7px;flex-wrap:wrap;}
+.bg{background:var(--card);border:1px solid var(--b2);border-radius:11px;padding:8px 11px;display:flex;align-items:center;gap:6px;}
+.bg-i{font-size:20px;}
+.bg-n{font-size:11px;font-weight:700;}
+.bg-d{font-size:9px;color:var(--sub);margin-top:1px;}
+.bg.locked{opacity:.3;}
+
+.shop{margin:0 14px 12px;background:linear-gradient(135deg,rgba(255,184,0,.06),rgba(255,184,0,.02));border:1px solid rgba(255,184,0,.15);border-radius:16px;padding:14px;}
+.shop-t{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--gold2);margin-bottom:3px;}
+.shop-s{font-size:11px;color:var(--sub);margin-bottom:12px;line-height:1.5;}
+.shop-it{display:flex;flex-direction:column;gap:7px;}
+.si{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:11px;padding:10px 12px;cursor:pointer;transition:.15s;}
+.si:active{transform:scale(.98);}
+.si-i{font-size:22px;width:34px;text-align:center;}
+.si-in{flex:1;}
+.si-n{font-size:13px;font-weight:700;}
+.si-d{font-size:10px;color:var(--sub);margin-top:1px;}
+.si-p{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--gold2);}
+
+.ref{margin:0 14px 14px;background:rgba(0,229,160,.05);border:1px solid rgba(0,229,160,.15);border-radius:16px;padding:14px;}
+.ref-t{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--g);margin-bottom:3px;}
+.ref-s{font-size:11px;color:var(--sub);margin-bottom:11px;line-height:1.6;}
+.ref-l{background:var(--bg);border:1px solid var(--b2);border-radius:9px;padding:8px 12px;font-size:11px;color:var(--blue);font-family:'Barlow Condensed',sans-serif;margin-bottom:9px;}
+.ref-st{display:flex;gap:7px;}
+.rs{flex:1;background:var(--card);border:1px solid var(--b2);border-radius:10px;padding:9px;text-align:center;}
+.rs-n{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;color:var(--g);}
+.rs-l{font-size:9px;color:var(--sub);margin-top:2px;text-transform:uppercase;letter-spacing:.5px;}
+
+.air{margin:0 14px 14px;background:linear-gradient(135deg,rgba(255,184,0,.07),rgba(255,184,0,.02));border:1px solid rgba(255,184,0,.18);border-radius:16px;padding:14px;}
+.air-t{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--gold2);margin-bottom:3px;}
+.air-s{font-size:11px;color:var(--sub);margin-bottom:10px;line-height:1.6;}
+.air-b{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:var(--gold2);margin-bottom:10px;}
+.air-btn{background:var(--g);border-radius:11px;padding:11px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;color:#03120a;cursor:pointer;box-shadow:0 0 20px rgba(0,229,160,.3);}
+
+/* MARKETS FILTER */
+.mf{display:flex;gap:6px;padding:0 14px 12px;overflow-x:auto;scrollbar-width:none;}
+.mf::-webkit-scrollbar{display:none;}
+.mft{flex-shrink:0;padding:7px 14px;border-radius:9px;background:var(--card);border:1px solid var(--b2);font-size:12px;font-weight:600;color:var(--sub);cursor:pointer;transition:.15s;}
+.mft.active{background:rgba(0,229,160,.1);border-color:rgba(0,229,160,.3);color:var(--g);}
+</style>
+</head>
+<body>
+
+<!-- ══════ FEED (TIKTOK) ══════ -->
+<div class="screen active" id="s-feed">
+  <div class="tb">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;background:linear-gradient(135deg,var(--g),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.5px;">OracleX</div>
+    <div style="flex:1;text-align:center;" class="streak-chip">🔥 <span id="sc1">5</span></div>
+    <div class="bal-pill"><span class="bal-n" id="b1">12,500</span> 💎</div>
+  </div>
+  <div id="feed-scroll"></div>
+  <nav class="bnav">
+    <div class="ni" onclick="go('home')"><div class="ni-ic">🏠</div><div class="ni-lb">Головна</div></div>
+    <div class="ni active" onclick="go('feed')"><div class="ni-ic">⚡</div><div class="ni-lb">Стрічка</div></div>
+    <div class="ni-create" onclick="go('create')"><div class="ni-create-circle">＋</div><div class="ni-create-lb">Створити</div></div>
+    <div class="ni" onclick="go('markets')"><div class="ni-ic">📊</div><div class="ni-lb">Ринки</div></div>
+    <div class="ni" onclick="go('profile')"><div class="ni-ic">👤</div><div class="ni-lb">Профіль</div></div>
+  </nav>
+</div>
+
+<!-- ══════ HOME ══════ -->
+<div class="screen" id="s-home">
+  <div class="tb">
+    <div class="av">👤<div class="dot"></div></div>
+    <div class="tb-mid"><div class="tb-name">@siry_kardynal</div><div class="tb-sub"><span class="lvl">UR.5</span> Провісник</div></div>
+    <div class="streak-chip">🔥 <span id="sc2">5</span></div>
+    <div class="bal-pill"><span class="bal-n" id="b2">12,500</span> 💎</div>
+  </div>
+  <div class="sc">
+    <div class="daily" onclick="claimDaily()">
+      <div class="d-ico">🎁</div>
+      <div class="d-t"><div class="d-title">Щоденна нагорода!</div><div class="d-sub">День 5 → +250 💎 · Серія горить!</div></div>
+      <div class="d-btn">Забрати</div>
+    </div>
+    <div class="stats">
+      <div class="sbox"><div class="sv2 g">71%</div><div class="sl">Win Rate</div></div>
+      <div class="sbox"><div class="sv2 gold">#47</div><div class="sl">Рейтинг</div></div>
+      <div class="sbox"><div class="sv2 b" id="h-games">124</div><div class="sl">Ігор</div></div>
+      <div class="sbox"><div class="sv2 r">🔥5</div><div class="sl">Серія</div></div>
+    </div>
+    <div class="rtabs" id="rtabs">
+      <div class="rtab active" onclick="setRoom('ua',this)">🇺🇦 Україна <span class="rcnt">3</span></div>
+      <div class="rtab" onclick="setRoom('global',this)">🌍 Глобальний <span class="rcnt">5</span></div>
+      <div class="rtab" onclick="setRoom('crypto',this)">₿ Крипто <span class="rcnt">4</span></div>
+      <div class="rtab" onclick="setRoom('us',this)">🇺🇸 США <span class="rcnt">2</span></div>
+      <div class="rtab" onclick="setRoom('eu',this)">🇪🇺 EU <span class="rcnt">2</span></div>
+      <div class="rtab" onclick="setRoom('sports',this)">⚽ Спорт <span class="rcnt">3</span></div>
+    </div>
+    <div class="shdr"><div class="stitle">⚡ Активність друзів</div></div>
+    <div class="feed-list">
+      <div class="fi"><div class="fi-av">🐺</div><div class="fi-tx"><b>@wolf_ivan</b> вгадав YES — BTC $100K</div><div class="fi-pt win">+1,200 💎</div></div>
+      <div class="fi"><div class="fi-av">🌺</div><div class="fi-tx"><b>@kvitka_22</b> програв NO — USD/UAH</div><div class="fi-pt lose">–500 💎</div></div>
+      <div class="fi"><div class="fi-av">🦁</div><div class="fi-tx"><b>@lev_ua</b> кинув тобі виклик! ⚔️</div><div class="fi-pt" style="color:var(--purple)">Прийняти</div></div>
+    </div>
+    <div class="shdr"><div class="stitle">📊 Активні ринки</div><div class="slink" onclick="go('markets')">Всі →</div></div>
+    <div class="pcards" id="hcards"></div>
+    <div class="bpad"></div>
+  </div>
+  <nav class="bnav">
+    <div class="ni active" onclick="go('home')"><div class="ni-ic">🏠</div><div class="ni-lb">Головна</div></div>
+    <div class="ni" onclick="go('feed')"><div class="ni-ic">⚡</div><div class="ni-lb">Стрічка</div></div>
+    <div class="ni-create" onclick="go('create')"><div class="ni-create-circle">＋</div><div class="ni-create-lb">Створити</div></div>
+    <div class="ni" onclick="go('markets')"><div class="ni-ic">📊</div><div class="ni-lb">Ринки</div></div>
+    <div class="ni" onclick="go('profile')"><div class="ni-ic">👤</div><div class="ni-lb">Профіль</div></div>
+  </nav>
+</div>
+
+<!-- ══════ MARKETS ══════ -->
+<div class="screen" id="s-markets">
+  <div class="tb">
+    <div class="back-btn" onclick="go('home')">‹</div>
+    <div class="tb-title">РИНКИ</div>
+    <div class="bal-pill" style="padding:4px 10px;"><span class="bal-n" style="font-size:15px;" id="b3">12,500</span> 💎</div>
+  </div>
+  <div class="mf">
+    <div class="mft active" onclick="filterM('all',this)">Всі</div>
+    <div class="mft" onclick="filterM('ua',this)">🇺🇦 UA</div>
+    <div class="mft" onclick="filterM('global',this)">🌍 Global</div>
+    <div class="mft" onclick="filterM('crypto',this)">₿ Крипто</div>
+    <div class="mft" onclick="filterM('us',this)">🇺🇸 US</div>
+    <div class="mft" onclick="filterM('eu',this)">🇪🇺 EU</div>
+    <div class="mft" onclick="filterM('sports',this)">⚽ Спорт</div>
+  </div>
+  <div class="sc"><div class="pcards" id="mcards"></div><div class="bpad"></div></div>
+  <nav class="bnav">
+    <div class="ni" onclick="go('home')"><div class="ni-ic">🏠</div><div class="ni-lb">Головна</div></div>
+    <div class="ni" onclick="go('feed')"><div class="ni-ic">⚡</div><div class="ni-lb">Стрічка</div></div>
+    <div class="ni-create" onclick="go('create')"><div class="ni-create-circle">＋</div><div class="ni-create-lb">Створити</div></div>
+    <div class="ni active" onclick="go('markets')"><div class="ni-ic">📊</div><div class="ni-lb">Ринки</div></div>
+    <div class="ni" onclick="go('profile')"><div class="ni-ic">👤</div><div class="ni-lb">Профіль</div></div>
+  </nav>
+</div>
+
+<!-- ══════ LEADERBOARD ══════ -->
+<div class="screen" id="s-leaders">
+  <div class="tb">
+    <div class="back-btn" onclick="go('home')">‹</div>
+    <div class="tb-title">🏆 РЕЙТИНГ</div>
+    <div style="width:34px;"></div>
+  </div>
+  <div class="lb-tabs">
+    <div class="lb-tab active" onclick="setLb(this)">🌍 Глобальний</div>
+    <div class="lb-tab" onclick="setLb(this)">🇺🇦 Україна</div>
+    <div class="lb-tab" onclick="setLb(this)">👥 Друзі</div>
+  </div>
+  <div class="sc">
+    <div class="podium">
+      <div class="pod"><div class="pod-av p2" style="background:#1a2a3a;">🦊</div><div class="pod-n">@fox_ua</div><div class="pod-p">18,200 💎</div><div class="pod-base pb2">2</div></div>
+      <div class="pod"><div class="pod-av p1" style="background:#1e2a10;"><div class="pod-crown">👑</div>🧙‍♂️</div><div class="pod-n">@oracle_pro</div><div class="pod-p">24,500 💎</div><div class="pod-base pb1">1</div></div>
+      <div class="pod"><div class="pod-av p3" style="background:#2a1a0a;">🐯</div><div class="pod-n">@tiger88</div><div class="pod-p">15,100 💎</div><div class="pod-base pb3">3</div></div>
+    </div>
+    <div class="lb-list">
+      <div class="lb-row"><div class="lb-rk">4</div><div class="lb-av">🦅</div><div class="lb-in"><div class="lb-nm">@eagle_eye</div><div class="lb-mt">Win 84% · 210 ігор</div></div><div class="lb-pt">12,300</div></div>
+      <div class="lb-row"><div class="lb-rk">5</div><div class="lb-av">🌙</div><div class="lb-in"><div class="lb-nm">@night_moon</div><div class="lb-mt">Win 79% · 188 ігор</div></div><div class="lb-pt">10,800</div></div>
+      <div class="lb-row"><div class="lb-rk">6</div><div class="lb-av">⚡</div><div class="lb-in"><div class="lb-nm">@flash_k</div><div class="lb-mt">Win 76% · 165 ігор</div></div><div class="lb-pt">9,450</div></div>
+      <div class="lb-row me"><div class="lb-rk" style="color:var(--g)">#47</div><div class="lb-av">😎</div><div class="lb-in"><div class="lb-nm" style="color:var(--g)">@siry_kardynal (ти)</div><div class="lb-mt">Win 71% · <span id="lb-g">124</span> ігор</div></div><div class="lb-pt" id="lb-b">12,500</div></div>
+    </div>
+    <div class="bpad"></div>
+  </div>
+  <nav class="bnav">
+    <div class="ni" onclick="go('home')"><div class="ni-ic">🏠</div><div class="ni-lb">Головна</div></div>
+    <div class="ni" onclick="go('feed')"><div class="ni-ic">⚡</div><div class="ni-lb">Стрічка</div></div>
+    <div class="ni-create" onclick="go('create')"><div class="ni-create-circle">＋</div><div class="ni-create-lb">Створити</div></div>
+    <div class="ni" onclick="go('markets')"><div class="ni-ic">📊</div><div class="ni-lb">Ринки</div></div>
+    <div class="ni" onclick="go('profile')"><div class="ni-ic">👤</div><div class="ni-lb">Профіль</div></div>
+  </nav>
+</div>
+
+<!-- ══════ PROFILE ══════ -->
+<div class="screen" id="s-profile">
+  <div class="tb">
+    <div class="back-btn" onclick="go('home')">‹</div>
+    <div class="tb-title">ПРОФІЛЬ</div>
+    <div style="width:34px;"></div>
+  </div>
+  <div class="sc">
+    <div class="ph">
+      <div class="pav">😎</div>
+      <div class="pnm">@siry_kardynal</div>
+      <div class="plv">⚡ Рівень 5 — Провісник</div>
+      <div class="pxp"><div class="pxpf"></div></div>
+      <div class="pxt">XP: 6,300 / 10,000 до Рівня 6</div>
+    </div>
+    <div class="psr">
+      <div class="wr">
+        <svg viewBox="0 0 76 76"><circle class="wr-bg" cx="38" cy="38" r="33"/><circle class="wr-f" cx="38" cy="38" r="33"/></svg>
+        <div class="wr-n"><div class="wr-pct">71%</div><div class="wr-l">Win Rate</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
+        <div class="sbox" style="text-align:left;display:flex;justify-content:space-between;align-items:center;"><span style="font-size:11px;color:var(--sub);">💎 Баланс</span><span class="sv2 g" style="font-size:17px;" id="pb">12,500</span></div>
+        <div class="sbox" style="text-align:left;display:flex;justify-content:space-between;align-items:center;"><span style="font-size:11px;color:var(--sub);">📊 Ігор</span><span class="sv2 b" style="font-size:17px;" id="pg">124</span></div>
+        <div class="sbox" style="text-align:left;display:flex;justify-content:space-between;align-items:center;"><span style="font-size:11px;color:var(--sub);">🏆 Місце</span><span class="sv2 gold" style="font-size:17px;">#47</span></div>
+      </div>
+    </div>
+    <div class="sk-card">
+      <div class="sk-f">🔥</div>
+      <div class="sk-i">
+        <div class="sk-v">5-денна серія!</div>
+        <div class="sk-s">Заходь щодня — не зупиняй серію</div>
+        <div class="sk-d"><div class="sd on"></div><div class="sd on"></div><div class="sd on"></div><div class="sd on"></div><div class="sd on"></div><div class="sd cur"></div><div class="sd"></div></div>
+      </div>
+    </div>
+    <div class="bg-sect">
+      <div class="bg-t">🏅 Досягнення</div>
+      <div class="bg-grid">
+        <div class="bg"><div class="bg-i">🥇</div><div><div class="bg-n">First Win</div><div class="bg-d">Перша перемога</div></div></div>
+        <div class="bg"><div class="bg-i">🔥</div><div><div class="bg-n">5-Day Streak</div><div class="bg-d">5 днів поспіль</div></div></div>
+        <div class="bg"><div class="bg-i">₿</div><div><div class="bg-n">Crypto Expert</div><div class="bg-d">10 крипто ринків</div></div></div>
+        <div class="bg"><div class="bg-i">🐋</div><div><div class="bg-n">Market Whale</div><div class="bg-d">100 ігор</div></div></div>
+        <div class="bg locked"><div class="bg-i">👑</div><div><div class="bg-n">Top-10 🔒</div><div class="bg-d">Увійди в топ-10</div></div></div>
+        <div class="bg locked"><div class="bg-i">💎</div><div><div class="bg-n">Legend 🔒</div><div class="bg-d">Win rate 85%+</div></div></div>
+      </div>
+    </div>
+    <div class="shop">
+      <div class="shop-t">⭐ Telegram Stars Shop</div>
+      <div class="shop-s">Прискор прогрес — купи бусти. Не гемблінг — завжди безпечно.</div>
+      <div class="shop-it">
+        <div class="si" onclick="toast('⚡ XP Boost x2 — 50 Stars (незабаром)')"><div class="si-i">⚡</div><div class="si-in"><div class="si-n">XP Boost x2</div><div class="si-d">Подвоює XP на 24г</div></div><div class="si-p">50 ⭐</div></div>
+        <div class="si" onclick="toast('💎 Premium Badge — 100 Stars (незабаром)')"><div class="si-i">💎</div><div class="si-in"><div class="si-n">Premium Badge</div><div class="si-d">Ексклюзивний значок</div></div><div class="si-p">100 ⭐</div></div>
+        <div class="si" onclick="toast('🎯 +10 Plays — 30 Stars (незабаром)')"><div class="si-i">🎯</div><div class="si-in"><div class="si-n">+10 Extra Plays</div><div class="si-d">Додаткові ставки</div></div><div class="si-p">30 ⭐</div></div>
+      </div>
+    </div>
+    <div class="ref">
+      <div class="ref-t">🔗 Запроси друзів</div>
+      <div class="ref-s">За кожного друга <b style="color:var(--g)">+500 💎</b> тобі · <b style="color:var(--blue)">+200 💎</b> йому<br>Він грає → ти отримуєш <b style="color:var(--gold)">10% його монет завжди</b></div>
+      <div class="ref-l">t.me/UAOracleBot?ref=usr_48210</div>
+      <div class="ref-st">
+        <div class="rs"><div class="rs-n">7</div><div class="rs-l">Запрошено</div></div>
+        <div class="rs"><div class="rs-n">3.5K</div><div class="rs-l">Зароблено</div></div>
+        <div class="rs"><div class="rs-n">10%</div><div class="rs-l">Пасивно</div></div>
+      </div>
+    </div>
+    <div class="air">
+      <div class="air-t">💰 SORCL Token AirDrop</div>
+      <div class="air-s">Конвертуй 💎 у токен SORCL · <b style="color:var(--gold2)">Q4 2026</b> лістинг<br>10,000 💎 = 1 SORCL · +20% бонус за рефералів</div>
+      <div class="air-b" id="air-b">12,500 💎 → ~1,250 SORCL</div>
+      <div class="air-btn" onclick="toast('💎 TON гаманець підключено!')">Підключити TON Wallet</div>
+    </div>
+    <div class="bpad"></div>
+  </div>
+  <nav class="bnav">
+    <div class="ni" onclick="go('home')"><div class="ni-ic">🏠</div><div class="ni-lb">Головна</div></div>
+    <div class="ni" onclick="go('feed')"><div class="ni-ic">⚡</div><div class="ni-lb">Стрічка</div></div>
+    <div class="ni-create" onclick="go('create')"><div class="ni-create-circle">＋</div><div class="ni-create-lb">Створити</div></div>
+    <div class="ni" onclick="go('markets')"><div class="ni-ic">📊</div><div class="ni-lb">Ринки</div></div>
+    <div class="ni active" onclick="go('profile')"><div class="ni-ic">👤</div><div class="ni-lb">Профіль</div></div>
+  </nav>
+</div>
+
+<!-- ══════ CREATE MARKET SCREEN ══════ -->
+<div class="screen" id="s-create">
+  <div class="tb">
+    <div class="back-btn" onclick="go('home')">‹</div>
+    <div class="tb-title">✏️ СТВОРИТИ РИНОК</div>
+    <div style="width:34px;"></div>
+  </div>
+  <div class="sc">
+    <div style="padding:12px 14px 0;font-size:12px;color:var(--sub);line-height:1.6;margin-bottom:14px;">
+      Створи своє питання — інші гравці будуть ставити ставки. Якщо ринок стане популярним — отримаєш <b style="color:var(--gold2)">бонусні 💎</b>.
+    </div>
+
+    <!-- ПИТАННЯ -->
+    <div class="cf-section">
+      <div class="cf-label">📝 Питання <span class="cf-req">*</span></div>
+      <div class="cf-hint">Сформулюй чітко. Відповідь має бути однозначною: ТАК або НІ</div>
+      <textarea class="cf-input cf-textarea" id="cf-q" maxlength="120" placeholder="Наприклад: Біткоїн перевищить $120,000 до кінця 2026 року?" oninput="cfUpdate()"></textarea>
+      <div class="cf-counter"><span id="cf-qlen">0</span>/120</div>
+    </div>
+
+    <!-- ОПИС -->
+    <div class="cf-section">
+      <div class="cf-label">📋 Деталі <span style="color:var(--sub);font-size:10px;">(необов'язково)</span></div>
+      <textarea class="cf-input cf-textarea" id="cf-sub" maxlength="200" placeholder="Додаткові умови, джерело результату..." style="height:60px;" oninput="cfUpdate()"></textarea>
+    </div>
+
+    <!-- КАТЕГОРІЯ -->
+    <div class="cf-section">
+      <div class="cf-label">🏷️ Категорія <span class="cf-req">*</span></div>
+      <div class="cf-cats" id="cf-cats">
+        <div class="cf-cat active" data-room="ua"     onclick="cfCat(this)">🇺🇦 Україна</div>
+        <div class="cf-cat"        data-room="global"  onclick="cfCat(this)">🌍 Глобальний</div>
+        <div class="cf-cat"        data-room="crypto"  onclick="cfCat(this)">₿ Крипто</div>
+        <div class="cf-cat"        data-room="us"      onclick="cfCat(this)">🇺🇸 США</div>
+        <div class="cf-cat"        data-room="eu"      onclick="cfCat(this)">🇪🇺 Євросоюз</div>
+        <div class="cf-cat"        data-room="sports"  onclick="cfCat(this)">⚽ Спорт</div>
+      </div>
+    </div>
+
+    <!-- ІКОНКА -->
+    <div class="cf-section">
+      <div class="cf-label">🎨 Іконка</div>
+      <div class="cf-icons">
+        <div class="cf-icon active" onclick="cfIcon(this)">₿</div>
+        <div class="cf-icon" onclick="cfIcon(this)">📈</div>
+        <div class="cf-icon" onclick="cfIcon(this)">⚽</div>
+        <div class="cf-icon" onclick="cfIcon(this)">🏛️</div>
+        <div class="cf-icon" onclick="cfIcon(this)">💵</div>
+        <div class="cf-icon" onclick="cfIcon(this)">🥇</div>
+        <div class="cf-icon" onclick="cfIcon(this)">🤖</div>
+        <div class="cf-icon" onclick="cfIcon(this)">🔥</div>
+        <div class="cf-icon" onclick="cfIcon(this)">🌍</div>
+        <div class="cf-icon" onclick="cfIcon(this)">💊</div>
+        <div class="cf-icon" onclick="cfIcon(this)">🚀</div>
+        <div class="cf-icon" onclick="cfIcon(this)">⚡</div>
+      </div>
+    </div>
+
+    <!-- ДЕДЛАЙН -->
+    <div class="cf-section">
+      <div class="cf-label">⏱️ Дедлайн <span class="cf-req">*</span></div>
+      <div class="cf-deadlines" id="cf-dl">
+        <div class="cf-dl active" data-val="1г 00:00"    onclick="cfDL(this)">1 год</div>
+        <div class="cf-dl"        data-val="24г 00:00"   onclick="cfDL(this)">24 год</div>
+        <div class="cf-dl"        data-val="3д 00:00"    onclick="cfDL(this)">3 дні</div>
+        <div class="cf-dl"        data-val="7д 00:00"    onclick="cfDL(this)">7 днів</div>
+        <div class="cf-dl"        data-val="14д 00:00"   onclick="cfDL(this)">14 днів</div>
+        <div class="cf-dl"        data-val="30д 00:00"   onclick="cfDL(this)">30 днів</div>
+      </div>
+    </div>
+
+    <!-- ПОЧАТКОВИЙ ПУЛ -->
+    <div class="cf-section">
+      <div class="cf-label">💎 Початкова ставка (твоя сторона)</div>
+      <div class="cf-hint">Щоб запустити ринок — постав першу ставку. Інші побачать її і зможуть грати проти тебе.</div>
+      <div class="cf-starter-row">
+        <div class="cf-side-btns">
+          <button class="cf-side cf-yes active" id="cf-yes-btn" onclick="cfSide('yes')">✅ YES</button>
+          <button class="cf-side cf-no"         id="cf-no-btn"  onclick="cfSide('no')">❌ NO</button>
+        </div>
+        <div class="cf-amount-row">
+          <span class="cf-amount-label">Сума:</span>
+          <div class="cf-amounts">
+            <button class="cf-am active" onclick="cfAmount(this,100)">100</button>
+            <button class="cf-am" onclick="cfAmount(this,500)">500</button>
+            <button class="cf-am" onclick="cfAmount(this,1000)">1 000</button>
+            <button class="cf-am" onclick="cfAmount(this,5000)">5 000</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ПРАВИЛА -->
+    <div style="margin:0 14px 14px;background:rgba(255,255,255,.03);border:1px solid var(--b2);border-radius:12px;padding:12px;">
+      <div style="font-size:11px;color:var(--sub);line-height:1.6;">
+        📌 <b style="color:var(--text);">Правила:</b><br>
+        · Питання має мати чітку відповідь YES/NO<br>
+        · Заборонені питання про конкретних приватних осіб<br>
+        · Результат визначається публічними джерелами<br>
+        · Модерація: ринок з'явиться після перевірки (~15 хв)
+      </div>
+    </div>
+
+    <!-- PREVIEW -->
+    <div class="cf-section">
+      <div class="cf-label">👁️ Попередній перегляд</div>
+      <div class="cf-preview" id="cf-preview">
+        <div class="cf-prev-icon" id="cpv-icon">₿</div>
+        <div class="cf-prev-q" id="cpv-q">Твоє питання з'явиться тут...</div>
+        <div class="cf-prev-bar">
+          <div class="cf-prev-yes" id="cpv-yes">✅ YES — твоя ставка</div>
+          <div class="cf-prev-no"  id="cpv-no">❌ NO — чекає гравців</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- КНОПКА ПУБЛІКАЦІЇ -->
+    <div style="padding:0 14px 14px;">
+      <button class="cf-submit" id="cf-submit" onclick="submitMarket()" disabled>
+        ✏️ Опублікувати ринок
+      </button>
+      <div style="font-size:10px;color:var(--sub);text-align:center;margin-top:8px;" id="cf-submit-hint">
+        Заповни питання, категорію та дедлайн
+      </div>
+    </div>
+
+    <div class="bpad"></div>
+  </div>
+  <nav class="bnav">
+    <div class="ni" onclick="go('home')"><div class="ni-ic">🏠</div><div class="ni-lb">Головна</div></div>
+    <div class="ni" onclick="go('feed')"><div class="ni-ic">⚡</div><div class="ni-lb">Стрічка</div></div>
+    <div class="ni-create" onclick="go('create')"><div class="ni-create-circle">＋</div><div class="ni-create-lb">Створити</div></div>
+    <div class="ni" onclick="go('markets')"><div class="ni-ic">📊</div><div class="ni-lb">Ринки</div></div>
+    <div class="ni" onclick="go('profile')"><div class="ni-ic">👤</div><div class="ni-lb">Профіль</div></div>
+  </nav>
+</div>
+
+<!-- OVERLAYS -->
+<div class="rf" id="rf"><div class="rf-l" id="rf-l"></div><div class="rf-p" id="rf-p"></div></div>
+<div class="st" id="st"><span id="st-m">🔥</span></div>
+
+<script>
+// ════ DATA ════
+// ════════════════════════════════════════════════
+//  PARIMUTUEL ENGINE
+//  Гравці грають ПРОТИ ОДНЕ ОДНОГО.
+//  Застосунок бере 2% комісію з кожного пулу.
+//  Якщо одна сторона порожня — повне повернення.
+// ════════════════════════════════════════════════
+
+const FEE = 0.02; // 2% комісія платформи
+
+// Початкові пули — симулюють вже зроблені ставки інших гравців
+const MARKETS = [
+  {id:0, room:'ua',    q:'ДОЛАР ПО 45?',
+   sub:'Курс USD в Приват24 перевищить 45.00 грн до кінця тижня?',
+   poolYes:13200, poolNo:7100, t:'02:14:45', tp:'flash',
+   bg:'linear-gradient(160deg,#1a3a1a,#0d1f0d)', icon:'💵'},
+
+  {id:1, room:'ua',    q:'ШАХТАР ПЕРЕМОЖЕ?',
+   sub:'Шахтар переможе у наступному матчі Прем\'єр-ліги?',
+   poolYes:5200, poolNo:3800, t:'3д 12:00', tp:'new',
+   bg:'linear-gradient(160deg,#0a1f3a,#061220)', icon:'⚽'},
+
+  {id:2, room:'ua',    q:'НАФТОГАЗ ПІДНІМЕ ЦІНИ?',
+   sub:'Нафтогаз підвищить ціни на газ для населення цього місяця?',
+   poolYes:8400, poolNo:3600, t:'5д 00:00', tp:'hot',
+   bg:'linear-gradient(160deg,#3a1a0a,#1a0800)', icon:'🔥'},
+
+  {id:3, room:'global',q:'BITCOIN $100,000?',
+   sub:'BTC перевищить позначку $100,000 до кінця цього місяця?',
+   poolYes:32000, poolNo:15000, t:'08:30:00', tp:'mega',
+   bg:'linear-gradient(160deg,#1a1000,#5c3d00,#1a1000)', icon:'₿'},
+
+  {id:4, room:'global',q:'FED ЗНИЗИТЬ СТАВКУ?',
+   sub:'Федеральний резерв США знизить ставку на наступному засіданні?',
+   poolYes:9100, poolNo:11200, t:'3д 00:00', tp:'hot',
+   bg:'linear-gradient(160deg,#0a0a2a,#2a1050)', icon:'🏛️'},
+
+  {id:5, room:'global',q:'ЗОЛОТО ПРОБЄ $2,600?',
+   sub:'Ціна на золото перевищить $2,600 за тройську унцію?',
+   poolYes:6300, poolNo:5900, t:'7д 00:00', tp:'new',
+   bg:'linear-gradient(160deg,#2a1f00,#6b5200,#2a1800)', icon:'🥇'},
+
+  {id:6, room:'crypto',q:'BTC $90K СЬОГОДНІ?',
+   sub:'Bitcoin закриє торговий день вище позначки $90,000?',
+   poolYes:22400, poolNo:8600, t:'00:45:00', tp:'flash',
+   bg:'linear-gradient(160deg,#0d0d1f,#0d2040)', icon:'📈'},
+
+  {id:7, room:'crypto',q:'ETH ДОСЯГНЕ $4,000?',
+   sub:'Ethereum досягне позначки $4,000 до кінця кварталу?',
+   poolYes:7800, poolNo:10700, t:'18д 00:00', tp:'hot',
+   bg:'linear-gradient(160deg,#0a1530,#1a1060)', icon:'🔷'},
+
+  {id:8, room:'crypto',q:'GPT-5 ЦЬОГО КВАРТАЛУ?',
+   sub:'OpenAI офіційно випустить GPT-5 до кінця поточного кварталу?',
+   poolYes:29000, poolNo:10000, t:'45д 00:00', tp:'mega',
+   bg:'linear-gradient(160deg,#0a0a1a,#2a1540)', icon:'🤖'},
+
+  {id:9, room:'us',    q:'ТРАМП ПІДПИШЕ ЗАКОН?',
+   sub:'Трамп підпише новий торговий закон до кінця поточного тижня?',
+   poolYes:7200, poolNo:11500, t:'4д 00:00', tp:'hot',
+   bg:'linear-gradient(160deg,#1a0a0a,#2a0808)', icon:'🇺🇸'},
+
+  {id:10,room:'eu',    q:'ЄВРО ДО ПАРИТЕТУ?',
+   sub:'EUR/USD впаде нижче позначки 1.00 до кінця поточного кварталу?',
+   poolYes:1800, poolNo:6400, t:'15д 00:00', tp:'hot',
+   bg:'linear-gradient(160deg,#001a10,#004530)', icon:'💶'},
+
+  {id:11,room:'sports',q:'РЕАЛ ВИГРАЄ ЛЧ?',
+   sub:'Реал Мадрид переможе у наступному матчі Ліги Чемпіонів?',
+   poolYes:19800, poolNo:11600, t:'4д 20:45', tp:'new',
+   bg:'linear-gradient(160deg,#001520,#003a50)', icon:'🏟️'},
+];
+
+// Ставки гравця {marketId: {side:'yes'|'no', amount:N}}
+const myBets = {};
+// Копія ринків (будемо мутувати пули при ставках)
+const D = MARKETS.map(m => ({...m}));
+
+let gems = 12500, streak = 5, games = 124;
+let curRoom = 'ua', mFilter = 'all';
+
+// ── Розрахункові функції ──────────────────────
+
+/** Загальний пул ринку */
+function totalPool(m){ return m.poolYes + m.poolNo; }
+
+/** Відсоток YES (для прогрес-бару) */
+function yesPct(m){
+  const t = totalPool(m);
+  return t === 0 ? 50 : Math.round(m.poolYes / t * 100);
+}
+
+/**
+ * Потенційний виграш якщо поставити amount на side.
+ * Повертає {payout, mult, isRefund}
+ *   payout  — скільки отримаєш назад (включно зі своєю ставкою)
+ *   mult    — множник (payout / amount)
+ *   isRefund— чи буде повернення (протилежний пул = 0)
+ */
+function calcPayout(m, side, amount){
+  const oppPool = side === 'yes' ? m.poolNo : m.poolYes;
+  const myPool  = side === 'yes' ? m.poolYes : m.poolNo;
+
+  // Якщо протилежний пул порожній — повернення
+  if(oppPool === 0) return { payout: amount, mult: 1.0, isRefund: true };
+
+  // Новий пул після ставки
+  const newMyPool = myPool + amount;
+  const total     = newMyPool + oppPool;
+  const netPot    = total * (1 - FEE);           // мінус комісія
+  const payout    = (amount / newMyPool) * netPot;
+  const mult      = payout / amount;
+  return { payout: Math.round(payout), mult: +mult.toFixed(2), isRefund: false };
+}
+
+/**
+ * Виконати ставку гравця.
+ * Оновлює пул ринку, списує монети, зберігає ставку.
+ */
+function placeBet(marketId, side, amount){
+  if(myBets[marketId]) return null; // вже є ставка
+  if(gems < amount) return null;    // недостатньо монет
+
+  const m = D.find(x => x.id === marketId);
+  const { payout, mult, isRefund } = calcPayout(m, side, amount);
+
+  // Оновлюємо пул
+  if(side === 'yes') m.poolYes += amount;
+  else               m.poolNo  += amount;
+
+  // Списуємо монети
+  gems -= amount;
+
+  // Запам'ятовуємо ставку
+  myBets[marketId] = { side, amount, payout, mult, isRefund };
+  games++;
+
+  return myBets[marketId];
+}
+
+/** Симуляція результату ринку для демо */
+function resolveMarket(m){
+  if(myBets[m.id] === undefined) return null;
+  const bet = myBets[m.id];
+
+  // Якщо повернення
+  if(bet.isRefund){
+    gems += bet.amount;
+    return { type:'refund', amount: bet.amount };
+  }
+
+  // Рандомний результат (у продакшені це оракул / адмін)
+  const won = Math.random() > 0.45;
+  const isWinner = (won && bet.side==='yes') || (!won && bet.side==='no');
+
+  if(isWinner){
+    gems += bet.payout;
+    return { type:'win', payout: bet.payout, profit: bet.payout - bet.amount };
+  } else {
+    return { type:'loss', amount: bet.amount };
+  }
+}
+
+// ── BET SIZE SELECTOR ─────────────────────────
+// Сума ставки яку гравець вибирає перед голосуванням
+let selectedBet = 100; // за замовчуванням
+
+// ════ HAPTIC FEEDBACK ════
+const TG = window.Telegram?.WebApp;
+function haptic(type='light'){
+  if(TG?.HapticFeedback){
+    if(type==='success') TG.HapticFeedback.notificationOccurred('success');
+    else if(type==='error') TG.HapticFeedback.notificationOccurred('error');
+    else if(type==='heavy') TG.HapticFeedback.impactOccurred('heavy');
+    else TG.HapticFeedback.impactOccurred('light');
+    return;
+  }
+  if(navigator.vibrate){
+    navigator.vibrate({light:10,medium:20,heavy:35,success:15,error:[30,10,30]}[type]??10);
+  }
+}
+
+// ════ TIKTOK FEED ENGINE ════
+const TAG_C={flash:'#ffb800',mega:'#a78bfa',hot:'#ff6080',new:'#00e5a0'};
+const TAG_L={flash:'⚡ FLASH',mega:'🔮 MEGA',hot:'🔥 HOT',new:'🆕 NEW'};
+const RL={ua:'🇺🇦 Україна',global:'🌍 Глобальний',crypto:'₿ Крипто',us:'🇺🇸 США',eu:'🇪🇺 EU',sports:'⚽ Спорт'};
+
+function fmtPool(n){
+  if(n>=1000000) return (n/1000000).toFixed(1)+'M';
+  if(n>=1000)    return (n/1000).toFixed(1)+'K';
+  return n.toString();
+}
+
+function makeFeedCard(m, h){
+  const bet  = myBets[m.id];
+  const pct  = yesPct(m);
+  const noPct= 100 - pct;
+  const tot  = totalPool(m);
+
+  // Попередній розрахунок для кнопок
+  const pyYes = calcPayout(m,'yes', selectedBet);
+  const pyNo  = calcPayout(m,'no',  selectedBet);
+
+  // Підказка про стан пулів
+  let poolHint = '';
+  if(m.poolYes===0 || m.poolNo===0){
+    poolHint = `<div style="background:rgba(255,184,0,.15);border:1px solid rgba(255,184,0,.3);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--gold2);margin-bottom:9px;text-align:center;">⚠️ Поки лише одна сторона — ставка повернеться якщо нікого не буде навпроти</div>`;
+  }
+
+  const el = document.createElement('div');
+  el.className = 'scard';
+  el.style.height = h+'px';
+  el.dataset.id = m.id;
+  el.innerHTML = `
+    <div class="sv" style="background:${m.bg};">
+      <div class="sv-noise"></div>
+      <div class="sv-icon">${m.icon}</div>
+    </div>
+    <div class="sv-ov"></div>
+    <div class="sv-cat">${RL[m.room]||m.room}</div>
+    <div class="sv-timer"><div class="tdot"></div>${m.t}</div>
+    <div style="position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:3;background:rgba(6,10,18,.75);border:1px solid ${TAG_C[m.tp]};border-radius:7px;padding:3px 10px;font-family:var(--f-display);font-size:11px;font-weight:800;color:${TAG_C[m.tp]};letter-spacing:.5px;">${TAG_L[m.tp]}</div>
+
+    <div class="sb">
+      <div class="sq">${m.q}</div>
+      <div class="ss">${m.sub}</div>
+
+      <!-- ПУЛИ (серце Parimutuel) -->
+      <div class="pool-section">
+        <div class="pool-bar-wrap">
+          <div class="pool-bar-yes" style="width:${pct}%"></div>
+          <div class="pool-bar-no"  style="width:${noPct}%"></div>
+        </div>
+        <div class="pool-labels">
+          <div class="pool-lbl-yes">
+            <span class="pool-pct-y">✅ ${pct}%</span>
+            <span class="pool-sum">${fmtPool(m.poolYes)} 💎</span>
+          </div>
+          <div class="pool-lbl-no">
+            <span class="pool-sum">${fmtPool(m.poolNo)} 💎</span>
+            <span class="pool-pct-n">❌ ${noPct}%</span>
+          </div>
+        </div>
+        <div class="pool-total">Загальний пул: <b>${fmtPool(tot)} 💎</b> </div>
+      </div>
+
+      ${poolHint}
+
+      <!-- ВИБІР СУМИ СТАВКИ -->
+      <div class="bet-size-row" id="bsr-${m.id}">
+        <span class="bet-label">Ставка:</span>
+        ${[50,100,500,1000].map(v=>`<button class="bet-chip${v===selectedBet?' bc-active':''}" onclick="setBet(${v},${m.id})">${v}</button>`).join('')}
+        <span class="bet-bal">Баланс: <b>${gems.toLocaleString()}</b> 💎</span>
+      </div>
+
+      <!-- КНОПКИ YES / NO з динамічним множником -->
+      <div class="rw" id="rw-${m.id}">
+        ${bet
+          ? betResultHTML(m, bet)
+          : `<button class="rwy" onclick="feedVote(${m.id},'yes',this)">
+               BUY YES
+               <span class="rwp">${pyYes.isRefund ? '↩ повернення' : `x${pyYes.mult} · +${(pyYes.payout-selectedBet).toLocaleString()} 💎`}</span>
+             </button>
+             <button class="rwn" onclick="feedVote(${m.id},'no',this)">
+               BUY NO
+               <span class="rwp">${pyNo.isRefund ? '↩ повернення' : `x${pyNo.mult} · +${(pyNo.payout-selectedBet).toLocaleString()} 💎`}</span>
+             </button>`
+        }
+      </div>
+    </div>
+    ${m===D[0]?'<div class="scroll-hint"><div class="sh-arrow">👇</div><div>Гортай вниз</div></div>':''}
+  `;
+  return el;
+}
+
+function betResultHTML(m, bet){
+  if(bet.resolved){
+    if(bet.result==='refund') return `<div class="bet-done refund-done">↩ СТАВКУ ПОВЕРНЕНО<div class="bet-done-sub">+${bet.amount} 💎 повернуто на баланс</div></div>`;
+    if(bet.result==='win')    return `<div class="bet-done win-done">🎯 ВИГРАШ!<div class="bet-done-sub">+${(bet.payout-bet.amount).toLocaleString()} 💎 прибуток (x${bet.mult})</div></div>`;
+    return `<div class="bet-done loss-done">❌ ПРОГРАШ<div class="bet-done-sub">−${bet.amount} 💎 пішли переможцям</div></div>`;
+  }
+  // Ставка зроблена, очікуємо результат
+  const sideLabel = bet.side==='yes' ? '✅ YES' : '❌ NO';
+  const refundNote = bet.isRefund ? '<div style="font-size:10px;opacity:.7;margin-top:3px;">⚠️ Поверн. якщо немає протилежних ставок</div>' : '';
+  return `
+    <div class="bet-pending">
+      <div class="bp-side">${sideLabel}</div>
+      <div class="bp-info">
+        <div class="bp-amount">Ставка: <b>${bet.amount.toLocaleString()} 💎</b></div>
+        <div class="bp-payout">Потенційний виграш: <b style="color:var(--g)">${bet.payout.toLocaleString()} 💎</b> (x${bet.mult})</div>
+        ${refundNote}
+      </div>
+      <button class="resolve-btn" onclick="doResolve(${m.id})">⚡ Результат</button>
+    </div>`;
+}
+
+function setBet(amount, marketId){
+  selectedBet = amount;
+  // Оновлюємо всі BET SIZE rows і кнопки у видимих картках
+  document.querySelectorAll('.bet-chip').forEach(b=>{
+    b.classList.toggle('bc-active', parseInt(b.textContent)===amount);
+  });
+  // Перерендерити кнопки конкретної картки
+  const m = D.find(x=>x.id===marketId);
+  if(!m || myBets[m.id]) return;
+  const rw = document.getElementById(`rw-${marketId}`);
+  if(!rw) return;
+  const pyYes = calcPayout(m,'yes',selectedBet);
+  const pyNo  = calcPayout(m,'no', selectedBet);
+  rw.innerHTML = `
+    <button class="rwy" onclick="feedVote(${m.id},'yes',this)">
+      BUY YES
+      <span class="rwp">${pyYes.isRefund?'↩ повернення':`x${pyYes.mult} · +${(pyYes.payout-selectedBet).toLocaleString()} 💎`}</span>
+    </button>
+    <button class="rwn" onclick="feedVote(${m.id},'no',this)">
+      BUY NO
+      <span class="rwp">${pyNo.isRefund?'↩ повернення':`x${pyNo.mult} · +${(pyNo.payout-selectedBet).toLocaleString()} 💎`}</span>
+    </button>`;
+  // Оновити баланс в рядку
+  const bsr = document.getElementById(`bsr-${marketId}`);
+  if(bsr){const b=bsr.querySelector('.bet-bal');if(b)b.innerHTML=`Баланс: <b>${gems.toLocaleString()}</b> 💎`;}
+}
+
+function renderFeed(){
+  const fs=document.getElementById('feed-scroll');
+  const feed=document.getElementById('s-feed');
+  const tb=feed.querySelector('.tb');
+  const nav=feed.querySelector('.bnav');
+  const h=window.innerHeight-tb.offsetHeight-nav.offsetHeight;
+  fs.style.height=h+'px';
+  fs.innerHTML='';
+  D.forEach(m=>fs.appendChild(makeFeedCard(m,h)));
+}
+
+function feedVote(id, side, btn){
+  haptic('heavy');
+  const m = D.find(x=>x.id===id);
+
+  if(gems < selectedBet){
+    haptic('error');
+    toast(`Недостатньо монет! Потрібно ${selectedBet} 💎`, true);
+    return;
+  }
+
+  const bet = placeBet(id, side, selectedBet);
+  if(!bet) return;
+
+  updBal();
+
+  // Оновити кнопки і пул прямо в картці без перерендеру
+  const rw = document.getElementById(`rw-${id}`);
+  if(rw) rw.outerHTML = `<div class="rw" id="rw-${id}">${betResultHTML(m, bet)}</div>`;
+
+  // Оновити пул-бар і лейбли
+  const card = document.querySelector(`.scard[data-id="${id}"]`);
+  if(card){
+    const pct = yesPct(m);
+    const tot = totalPool(m);
+    const barY = card.querySelector('.pool-bar-yes');
+    const barN = card.querySelector('.pool-bar-no');
+    if(barY) barY.style.width=pct+'%';
+    if(barN) barN.style.width=(100-pct)+'%';
+    card.querySelectorAll('.pool-sum')[0].textContent=fmtPool(m.poolYes)+' 💎';
+    card.querySelectorAll('.pool-sum')[1].textContent=fmtPool(m.poolNo)+' 💎';
+    card.querySelectorAll('.pool-pct-y')[0].textContent='✅ '+pct+'%';
+    card.querySelectorAll('.pool-pct-n')[0].textContent='❌ '+(100-pct)+'%';
+    const ptEl=card.querySelector('.pool-total');
+    if(ptEl) ptEl.innerHTML=`Загальний пул: <b>${fmtPool(tot)} 💎</b> `;
+  }
+
+  if(bet.isRefund){
+    haptic('medium');
+    toast(`↩ Ставка ${selectedBet} 💎 буде повернена якщо немає протилежних`);
+  } else {
+    haptic('success');
+    toast(`✅ Ставка прийнята! Можливий виграш: ${bet.payout.toLocaleString()} 💎`);
+  }
+}
+
+function doResolve(id){
+  haptic('medium');
+  const m = D.find(x=>x.id===id);
+  const result = resolveMarket(m);
+  if(!result) return;
+
+  const bet = myBets[id];
+  bet.resolved = true;
+  bet.result = result.type;
+
+  updBal();
+  if(result.type==='win'){
+    haptic('success');
+    burst(result.profit);
+    toast(`🎯 ВИГРАШ! +${result.profit.toLocaleString()} 💎 прибуток`);
+  } else if(result.type==='refund'){
+    haptic('medium');
+    toast(`↩ Ставку повернено: +${result.amount} 💎`);
+  } else {
+    haptic('error');
+    toast(`❌ Програш. Монети пішли переможцям`, true);
+  }
+
+  // Оновити кнопки
+  const rw = document.getElementById(`rw-${id}`);
+  if(rw) rw.outerHTML = `<div class="rw" id="rw-${id}">${betResultHTML(m, bet)}</div>`;
+}
+
+function resetFeed(){voted={};renderFeed();}
+window.addEventListener('resize',renderFeed);
+
+// ════ COIN BURST ════
+function burst(pts){
+  const bx=window.innerWidth/2,by=window.innerHeight/2;
+  const b=document.createElement('div');
+  b.className='cb';b.textContent=`+${pts} 💎`;
+  b.style.cssText=`left:${bx-40}px;top:${by-20}px`;
+  document.body.appendChild(b);setTimeout(()=>b.remove(),900);
+  ['💎','✨','⭐','💫','🌟'].forEach((e,i)=>{
+    const p=document.createElement('div');p.className='cp';
+    const a=(i/5)*Math.PI*2,d=60+Math.random()*50;
+    p.textContent=e;
+    p.style.cssText=`left:${bx+Math.random()*24-12}px;top:${by+Math.random()*24-12}px;--e:translate(${Math.cos(a)*d}px,${Math.sin(a)*d-40}px);animation-delay:${Math.random()*.1}s`;
+    document.body.appendChild(p);setTimeout(()=>p.remove(),900);
+  });
+}
+
+// ════ HOME / MARKET CARDS ════
+const tagCls={flash:'t-fl',mega:'t-me',hot:'t-ho',new:'t-ne'};
+const tagLbl={flash:'⚡ FLASH',mega:'🔮 MEGA',hot:'🔥 HOT',new:'🆕 NEW'};
+
+function buildCard(m){
+  const bet=myBets[m.id];
+  const pct=yesPct(m), noPct=100-pct, tot=totalPool(m);
+  const pyYes=calcPayout(m,'yes',selectedBet);
+  const pyNo =calcPayout(m,'no', selectedBet);
+  return`<div class="pcard" style="position:relative;">
+    <span class="ptag ${tagCls[m.tp]}">${tagLbl[m.tp]}</span>
+    <div class="pcb">
+      <div class="pcm"><div class="pcc">${m.icon}</div><div class="pcq">${m.q}</div></div>
+      <div class="pcs">${m.sub}</div>
+      <!-- POOL -->
+      <div class="pool-section" style="margin-bottom:8px;">
+        <div class="pool-bar-wrap" style="height:6px;">
+          <div class="pool-bar-yes" style="width:${pct}%"></div>
+          <div class="pool-bar-no"  style="width:${noPct}%"></div>
+        </div>
+        <div class="pool-labels" style="margin-bottom:2px;">
+          <div class="pool-lbl-yes" style="gap:4px;"><span class="pool-pct-y" style="font-size:12px;">✅ ${pct}%</span><span class="pool-sum">${fmtPool(m.poolYes)} 💎</span></div>
+          <div class="pool-lbl-no"  style="gap:4px;"><span class="pool-sum">${fmtPool(m.poolNo)} 💎</span><span class="pool-pct-n" style="font-size:12px;">❌ ${noPct}%</span></div>
+        </div>
+        <div class="pool-total" style="font-size:9px;">Пул: <b>${fmtPool(tot)} 💎</b> </div>
+      </div>
+    </div>
+    ${bet
+      ? `<div style="padding:0 14px 12px;">${betResultHTML(m,bet)}</div>`
+      : `<div class="yn">
+          <button class="yb yes-b" onclick="tapCard(${m.id},'yes',event)">BUY YES<span class="ys">${pyYes.isRefund?'↩ поверн.':`x${pyYes.mult}`}</span></button>
+          <button class="yb no-b"  onclick="tapCard(${m.id},'no', event)">BUY NO<span class="ys">${pyNo.isRefund?'↩ поверн.':`x${pyNo.mult}`}</span></button>
+        </div>`
+    }
+    <div class="timer-row2"><div class="tv">⏱ ${m.t}</div><div class="ch" onclick="doResolve(${m.id})">⚡ Результат</div></div>
+  </div>`;
+}
+
+function tapCard(id,side,e){
+  e.stopPropagation();
+  haptic('heavy');
+  if(gems<selectedBet){haptic('error');toast(`Недостатньо монет!`,true);return;}
+  const bet=placeBet(id,side,selectedBet);
+  if(!bet){haptic('error');toast('Вже є ставка!',true);return;}
+  updBal();
+  if(bet.isRefund) toast(`↩ Ставка буде повернена якщо немає протилежних`);
+  else {haptic('success');toast(`✅ Ставка ${selectedBet} 💎 прийнята! x${bet.mult}`);}
+  renderHCards();renderMCards();
+}
+
+function renderHCards(){
+  document.getElementById('hcards').innerHTML=D.filter(m=>m.room===curRoom).slice(0,3).map(buildCard).join('');
+}
+function renderMCards(){
+  document.getElementById('mcards').innerHTML=(mFilter==='all'?D:D.filter(m=>m.room===mFilter)).map(buildCard).join('');
+}
+function setRoom(r,btn){
+  curRoom=r;
+  document.querySelectorAll('#rtabs .rtab').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderHCards();
+}
+function filterM(f,btn){
+  mFilter=f;
+  document.querySelectorAll('.mft').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderMCards();
+}
+function setLb(btn){document.querySelectorAll('.lb-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+
+function claimDaily(){haptic('success');gems+=250;updBal();toast('🎁 +250 💎 щоденна нагорода!');}
+
+// ════ GLOBAL UI ════
+function updBal(){
+  const f=gems.toLocaleString();
+  ['b1','b2','b3','pb'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=f;});
+  const ab=document.getElementById('air-b');if(ab)ab.textContent=`${f} 💎 → ~${Math.round(gems/10).toLocaleString()} SORCL`;
+  const lb=document.getElementById('lb-b');if(lb)lb.textContent=f;
+  ['pg','h-games','lb-g'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=games;});
+}
+
+function toast(msg,bad=false){
+  haptic(bad?'error':'light');
+  const t=document.getElementById('st');
+  document.getElementById('st-m').textContent=msg;
+  t.className='st'+(bad?' bad':'')+' show';
+  clearTimeout(t._t);t._t=setTimeout(()=>t.className='st'+(bad?' bad':''),2400);
+}
+
+function go(page){
+  haptic('light');
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s-'+page).classList.add('active');
+  if(page==='markets') renderMCards();
+  if(page==='home')    renderHCards();
+  if(page==='feed')    renderFeed();
+  if(page==='create')  cfUpdate();
+}
+
+// ════ CREATE MARKET ════
+let cfState = {
+  q: '', sub: '', room: 'ua', icon: '₿',
+  deadline: '1г 00:00', side: 'yes', amount: 100
+};
+
+function cfUpdate(){
+  const q = document.getElementById('cf-q').value.trim();
+  const sub = document.getElementById('cf-sub').value.trim();
+  cfState.q = q;
+  cfState.sub = sub;
+  document.getElementById('cf-qlen').textContent = q.length;
+
+  // Preview
+  document.getElementById('cpv-icon').textContent = cfState.icon;
+  document.getElementById('cpv-q').textContent = q || 'Твоє питання з\'явиться тут...';
+  document.getElementById('cpv-yes').textContent = cfState.side==='yes'
+    ? `✅ YES — твоя ставка (${cfState.amount} 💎)`
+    : `✅ YES — чекає гравців`;
+  document.getElementById('cpv-no').textContent = cfState.side==='no'
+    ? `❌ NO — твоя ставка (${cfState.amount} 💎)`
+    : `❌ NO — чекає гравців`;
+
+  // Enable submit
+  const ok = q.length >= 10 && cfState.room && cfState.deadline;
+  const btn = document.getElementById('cf-submit');
+  const hint = document.getElementById('cf-submit-hint');
+  btn.disabled = !ok;
+  if(ok){
+    btn.textContent = `✏️ Опублікувати — ставка ${cfState.amount} 💎`;
+    hint.textContent = `Ринок з\'явиться після модерації (~15 хв)`;
+  } else {
+    btn.textContent = '✏️ Опублікувати ринок';
+    hint.textContent = q.length < 10
+      ? `Питання замало (мін. 10 символів)`
+      : 'Заповни питання, категорію та дедлайн';
+  }
+}
+
+function cfCat(btn){
+  document.querySelectorAll('.cf-cat').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  cfState.room = btn.dataset.room;
+  cfUpdate();
+}
+
+function cfIcon(btn){
+  document.querySelectorAll('.cf-icon').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  cfState.icon = btn.textContent;
+  cfUpdate();
+}
+
+function cfDL(btn){
+  document.querySelectorAll('.cf-dl').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  cfState.deadline = btn.dataset.val;
+  cfUpdate();
+}
+
+function cfSide(side){
+  cfState.side = side;
+  document.getElementById('cf-yes-btn').classList.toggle('active', side==='yes');
+  document.getElementById('cf-no-btn').classList.toggle('active', side==='no');
+  cfUpdate();
+}
+
+function cfAmount(btn, amount){
+  document.querySelectorAll('.cf-am').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  cfState.amount = amount;
+  cfUpdate();
+}
+
+function submitMarket(){
+  haptic('heavy');
+  if(gems < cfState.amount){
+    haptic('error');
+    toast(`Недостатньо монет! Потрібно ${cfState.amount} 💎`, true);
+    return;
+  }
+
+  // Списуємо монети (перша ставка)
+  gems -= cfState.amount;
+
+  // Створюємо новий ринок
+  const newId = D.length;
+  const newMarket = {
+    id: newId,
+    room: cfState.room,
+    q: cfState.q.toUpperCase(),
+    sub: cfState.sub || 'Ринок створений гравцем',
+    poolYes: cfState.side==='yes' ? cfState.amount : 0,
+    poolNo:  cfState.side==='no'  ? cfState.amount : 0,
+    t: cfState.deadline,
+    tp: 'new',
+    bg: 'linear-gradient(160deg,#0a1a2a,#060a12)',
+    icon: cfState.icon,
+    isUserCreated: true,
+    creator: '@siry_kardynal',
+  };
+  D.push(newMarket);
+
+  // Записуємо ставку автора
+  myBets[newId] = {
+    side: cfState.side,
+    amount: cfState.amount,
+    payout: cfState.amount, // буде перерахований коли з'являться опоненти
+    mult: 1.0,
+    isRefund: true, // поки немає другої сторони
+  };
+
+  updBal();
+  renderFeed();
+  renderHCards();
+  renderMCards();
+
+  // Показуємо успіх і переходимо на стрічку
+  haptic('success');
+  burst(0);
+  toast(`🎉 Ринок "${cfState.q.slice(0,30)}..." створено!`);
+
+  // Скидаємо форму
+  document.getElementById('cf-q').value = '';
+  document.getElementById('cf-sub').value = '';
+  cfState = {q:'',sub:'',room:'ua',icon:'₿',deadline:'1г 00:00',side:'yes',amount:100};
+  document.querySelectorAll('.cf-cat').forEach((b,i)=>{b.classList.toggle('active',i===0);});
+  document.querySelectorAll('.cf-icon').forEach((b,i)=>{b.classList.toggle('active',i===0);});
+  document.querySelectorAll('.cf-dl').forEach((b,i)=>{b.classList.toggle('active',i===0);});
+  document.querySelectorAll('.cf-am').forEach((b,i)=>{b.classList.toggle('active',i===0);});
+  cfUpdate();
+
+  setTimeout(()=>go('feed'), 800);
+}
+
+// ════ INIT ════
+// Init Telegram WebApp if available
+if(TG){ TG.ready(); TG.expand(); }
+renderFeed();
+renderHCards();
+</script>
+</body>
+</html>
