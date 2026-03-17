@@ -1,206 +1,199 @@
 // src/bot.js
-// ════════════════════════════════════════
-//  TELEGRAM BOT
-//  Сповіщення, команди, взаємодія
-// ════════════════════════════════════════
-
 const { Telegraf, Markup } = require('telegraf');
 const db     = require('./db');
 const logger = require('./logger');
 
-const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
-
+const bot      = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 const ADMIN_ID = process.env.ADMIN_CHAT_ID;
+const WEBAPP_URL = process.env.WEBAPP_URL || '';
 
-// ── Команди ─────────────────────────────
-
+// ── /start ───────────────────────────────
 bot.command('start', async (ctx) => {
-  const user = db.getOrCreateUser(
-    ctx.from.id,
-    ctx.from.username || ctx.from.first_name
-  );
+  const user = db.getOrCreateUser(ctx.from.id, ctx.from.username || ctx.from.first_name);
 
-  await ctx.reply(
-    `🔮 *Ласкаво просимо до OracleX!*\n\n` +
-    `Твій стартовий баланс: *${user.gems.toLocaleString()} 💎*\n\n` +
-    `Передбачай події — виграй монети!\n` +
-    `Відкрий міні-апп нижче 👇`,
-    {
-      parse_mode: 'Markdown',
-      ...Markup.keyboard([
-        [Markup.button.webApp('🔮 Відкрити OracleX', process.env.WEBAPP_URL || 'https://t.me/OracleXBot/app')],
-      ]).resize(),
-    }
-  );
-});
+    // ВИПРАВЛЕННЯ 3: кнопка webApp тільки якщо є WEBAPP_URL
+      const keyboard = WEBAPP_URL
+          ? Markup.keyboard([[Markup.button.webApp('🔮 Відкрити OracleX', WEBAPP_URL)]]).resize()
+              : Markup.removeKeyboard();
 
-bot.command('balance', async (ctx) => {
-  const user = db.getOrCreateUser(ctx.from.id, ctx.from.username);
-  await ctx.reply(
-    `💎 Твій баланс: *${user.gems.toLocaleString()} 💎*\n` +
-    `🎯 Перемог: ${user.wins} | Поразок: ${user.losses}`,
-    { parse_mode: 'Markdown' }
-  );
-});
+                await ctx.reply(
+                    `🔮 *Ласкаво просимо до OracleX!*\n\n` +
+                        `Твій баланс: *${user.gems.toLocaleString()} 💎*\n\n` +
+                            `Передбачай події — виграй монети!\n\n` +
+                                `Команди:\n/markets — активні ринки\n/balance — твій баланс`,
+                                    { parse_mode: 'Markdown', ...keyboard }
+                                      );
+                                      });
 
-bot.command('markets', async (ctx) => {
-  const markets = db.getOpenMarkets().slice(0, 5);
-  if (markets.length === 0) {
-    return ctx.reply('Наразі немає відкритих ринків.');
-  }
+                                      // ── /balance ─────────────────────────────
+                                      bot.command('balance', async (ctx) => {
+                                        const user = db.getOrCreateUser(ctx.from.id, ctx.from.username);
+                                          const winRate = user.totalBets > 0
+                                              ? Math.round(user.wins / user.totalBets * 100)
+                                                  : 0;
 
-  let text = '📊 *Активні ринки:*\n\n';
-  markets.forEach((m, i) => {
-    const total = m.poolYes + m.poolNo;
-    text += `${i+1}. ${m.icon} *${m.question}*\n`;
-    text += `   💎 Пул: ${total.toLocaleString()} | ⏱ ${m.deadlineStr}\n\n`;
-  });
+                                                    await ctx.reply(
+                                                        `💎 Баланс: *${user.gems.toLocaleString()} 💎*\n` +
+                                                            `🎯 Win Rate: ${winRate}%\n` +
+                                                                `✅ Перемог: ${user.wins} | ❌ Поразок: ${user.losses}\n` +
+                                                                    `📊 Всього ігор: ${user.totalBets}`,
+                                                                        { parse_mode: 'Markdown' }
+                                                                          );
+                                                                          });
 
-  await ctx.reply(text, { parse_mode: 'Markdown' });
-});
+                                                                          // ── /markets ─────────────────────────────
+                                                                          bot.command('markets', async (ctx) => {
+                                                                            const markets = db.getOpenMarkets().slice(0, 5);
+                                                                              if (!markets.length) return ctx.reply('Наразі немає відкритих ринків.');
 
-// ── Адмін команди ───────────────────────
+                                                                                let text = '📊 *Активні ринки:*\n\n';
+                                                                                  markets.forEach((m, i) => {
+                                                                                      const total  = m.poolYes + m.poolNo;
+                                                                                          const yesPct = total > 0 ? Math.round(m.poolYes / total * 100) : 50;
+                                                                                              text += `${i+1}. ${m.icon} *${m.question}*\n`;
+                                                                                                  text += `   YES ${yesPct}% | NO ${100-yesPct}% | Пул: ${total.toLocaleString()} 💎\n`;
+                                                                                                      text += `   ⏱ ${m.deadlineStr}\n\n`;
+                                                                                                        });
 
-bot.command('pending', async (ctx) => {
-  if (ctx.from.id.toString() !== ADMIN_ID) return;
+                                                                                                          await ctx.reply(text, { parse_mode: 'Markdown' });
+                                                                                                          });
 
-  const db_data = db.load();
-  const pending = db_data.markets.filter(m => m.status === 'pending_review');
+                                                                                                          // ── /stats (публічна статистика) ──────────
+                                                                                                          bot.command('stats', async (ctx) => {
+                                                                                                            const data    = db.load();
+                                                                                                              const open    = data.markets.filter(m => m.status === 'open').length;
+                                                                                                                const resolved = data.markets.filter(m => m.status === 'resolved').length;
+                                                                                                                  const totalPool = data.markets.reduce((sum, m) => sum + m.poolYes + m.poolNo, 0);
 
-  if (pending.length === 0) {
-    return ctx.reply('✅ Немає ринків на перевірку');
-  }
+                                                                                                                    await ctx.reply(
+                                                                                                                        `📊 *Статистика OracleX*\n\n` +
+                                                                                                                            `🟢 Відкритих ринків: ${open}\n` +
+                                                                                                                                `✅ Вирішених: ${resolved}\n` +
+                                                                                                                                    `💎 Загальний пул: ${totalPool.toLocaleString()}\n` +
+                                                                                                                                        `👥 Гравців: ${data.users.length}`,
+                                                                                                                                            { parse_mode: 'Markdown' }
+                                                                                                                                              );
+                                                                                                                                              });
 
-  for (const m of pending.slice(0, 5)) {
-    await ctx.reply(
-      `⚠️ *Ринок #${m.id} потребує рішення*\n\n` +
-      `❓ ${m.question}\n` +
-      `📝 ${m.sub || ''}\n` +
-      `🔗 ${m.source || 'немає джерела'}\n\n` +
-      `AI: ${m.resolveNote || 'немає пояснення'}`,
-      {
-        parse_mode: 'Markdown',
-        ...Markup.inlineKeyboard([
-          [
-            Markup.button.callback('✅ YES', `resolve_${m.id}_yes`),
-            Markup.button.callback('❌ NO', `resolve_${m.id}_no`),
-            Markup.button.callback('↩ Refund', `resolve_${m.id}_refund`),
-          ],
-        ]),
-      }
-    );
-  }
-});
+                                                                                                                                              // ── /pending (тільки адмін) ───────────────
+                                                                                                                                              bot.command('pending', async (ctx) => {
+                                                                                                                                                if (ctx.from.id.toString() !== ADMIN_ID) return;
 
-// Адмін вирішує ринок вручну
-bot.action(/resolve_(\d+)_(yes|no|refund)/, async (ctx) => {
-  if (ctx.from.id.toString() !== ADMIN_ID) return ctx.answerCbQuery('Немає прав');
+                                                                                                                                                  const data    = db.load();
+                                                                                                                                                    const pending = data.markets.filter(m => m.status === 'pending_review');
 
-  const marketId = parseInt(ctx.match[1]);
-  const result   = ctx.match[2];
-  const market   = db.getMarket(marketId);
+                                                                                                                                                      if (!pending.length) return ctx.reply('✅ Немає ринків на перевірку');
 
-  if (!market) return ctx.answerCbQuery('Ринок не знайдено');
+                                                                                                                                                        for (const m of pending.slice(0, 5)) {
+                                                                                                                                                            await ctx.reply(
+                                                                                                                                                                  `⚠️ *Ринок #${m.id} потребує рішення*\n\n` +
+                                                                                                                                                                        `❓ ${m.question}\n` +
+                                                                                                                                                                              `📝 ${m.sub || ''}\n` +
+                                                                                                                                                                                    `🔗 ${m.source || 'немає джерела'}\n\n` +
+                                                                                                                                                                                          `🤖 AI: ${m.resolveNote || 'немає пояснення'}`,
+                                                                                                                                                                                                {
+                                                                                                                                                                                                        parse_mode: 'Markdown',
+                                                                                                                                                                                                                ...Markup.inlineKeyboard([[
+                                                                                                                                                                                                                          Markup.button.callback('✅ YES',    `resolve_${m.id}_yes`),
+                                                                                                                                                                                                                                    Markup.button.callback('❌ NO',     `resolve_${m.id}_no`),
+                                                                                                                                                                                                                                              Markup.button.callback('↩ Refund', `resolve_${m.id}_refund`),
+                                                                                                                                                                                                                                                      ]]),
+                                                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                                                                );
+                                                                                                                                                                                                                                                                  }
+                                                                                                                                                                                                                                                                  });
 
-  // Імпортуємо payoutWinners з oracle
-  const { payoutWinners } = require('./oracle_helpers');
+                                                                                                                                                                                                                                                                  // ── Адмін вирішує ринок ───────────────────
+                                                                                                                                                                                                                                                                  bot.action(/resolve_(\d+)_(yes|no|refund)/, async (ctx) => {
+                                                                                                                                                                                                                                                                    if (ctx.from.id.toString() !== ADMIN_ID) return ctx.answerCbQuery('Немає прав');
 
-  let payoutInfo;
-  if (result === 'refund') {
-    // Повернення всім
-    const bets = db.getBetsForMarket(marketId);
-    bets.forEach(bet => db.addGems(bet.userId, bet.amount));
-    db.updateMarket(marketId, {
-      status: 'resolved', result: 'refund',
-      resolvedAt: new Date().toISOString(),
-      resolveNote: 'Вручну вирішено адміністратором: повернення',
-    });
-    payoutInfo = { type: 'refund' };
-  } else {
-    payoutInfo = payoutWinners(market, result);
-    db.updateMarket(marketId, {
-      resolveNote: `Вручну вирішено адміністратором: ${result.toUpperCase()}`,
-    });
-  }
+                                                                                                                                                                                                                                                                      const marketId = parseInt(ctx.match[1]);
+                                                                                                                                                                                                                                                                        const result   = ctx.match[2];
+                                                                                                                                                                                                                                                                          const market   = db.getMarket(marketId);
+                                                                                                                                                                                                                                                                            if (!market) return ctx.answerCbQuery('Ринок не знайдено');
 
-  await ctx.editMessageText(
-    `✅ Ринок #${marketId} вирішено: *${result.toUpperCase()}*\n` +
-    `${payoutInfo.type === 'payout' ? `💰 Виплачено: ${payoutInfo.total?.toLocaleString()} 💎 (${payoutInfo.winners} переможців)` : '↩ Всім повернуто ставки'}`,
-    { parse_mode: 'Markdown' }
-  );
+                                                                                                                                                                                                                                                                              // ВИПРАВЛЕННЯ 4: payoutWinners перенесено сюди — більше немає oracle_helpers
+                                                                                                                                                                                                                                                                                const { payoutWinners } = require('./oracle');
+                                                                                                                                                                                                                                                                                  let payoutInfo;
 
-  await ctx.answerCbQuery('Вирішено!');
+                                                                                                                                                                                                                                                                                    if (result === 'refund') {
+                                                                                                                                                                                                                                                                                        db.getBetsForMarket(marketId).forEach(b => db.addGems(b.userId, b.amount));
+                                                                                                                                                                                                                                                                                            db.updateMarket(marketId, {
+                                                                                                                                                                                                                                                                                                  status: 'resolved', result: 'refund',
+                                                                                                                                                                                                                                                                                                        resolvedAt: new Date().toISOString(),
+                                                                                                                                                                                                                                                                                                              resolveNote: 'Адміністратор: повернення',
+                                                                                                                                                                                                                                                                                                                  });
+                                                                                                                                                                                                                                                                                                                      payoutInfo = { type: 'refund' };
+                                                                                                                                                                                                                                                                                                                        } else {
+                                                                                                                                                                                                                                                                                                                            payoutInfo = payoutWinners(market, result);
+                                                                                                                                                                                                                                                                                                                                db.updateMarket(marketId, { resolveNote: `Адміністратор: ${result.toUpperCase()}` });
+                                                                                                                                                                                                                                                                                                                                  }
 
-  // Сповіщаємо гравців
-  await notifyMarketResolved(market, result, payoutInfo);
-});
+                                                                                                                                                                                                                                                                                                                                    const payText = payoutInfo.type === 'payout'
+                                                                                                                                                                                                                                                                                                                                        ? `💰 Виплачено: ${payoutInfo.total?.toLocaleString()} 💎 (${payoutInfo.winners} переможців)`
+                                                                                                                                                                                                                                                                                                                                            : '↩ Ставки повернуто всім';
 
-// ── Сповіщення ───────────────────────────
+                                                                                                                                                                                                                                                                                                                                              await ctx.editMessageText(
+                                                                                                                                                                                                                                                                                                                                                  `✅ Ринок #${marketId} вирішено: *${result.toUpperCase()}*\n${payText}`,
+                                                                                                                                                                                                                                                                                                                                                      { parse_mode: 'Markdown' }
+                                                                                                                                                                                                                                                                                                                                                        );
+                                                                                                                                                                                                                                                                                                                                                          await ctx.answerCbQuery('Вирішено!');
+                                                                                                                                                                                                                                                                                                                                                            await notifyMarketResolved(market, result, payoutInfo);
+                                                                                                                                                                                                                                                                                                                                                            });
 
-/**
- * Сповіщає адміна про нові ринки
- */
-async function notifyAdminNewMarkets(markets) {
-  if (!ADMIN_ID || markets.length === 0) return;
+                                                                                                                                                                                                                                                                                                                                                            // ── Сповіщення ────────────────────────────
+                                                                                                                                                                                                                                                                                                                                                            async function notifyAdminNewMarkets(markets) {
+                                                                                                                                                                                                                                                                                                                                                              if (!ADMIN_ID || !markets.length) return;
+                                                                                                                                                                                                                                                                                                                                                                let text = `🤖 *Згенеровано ${markets.length} нових ринків:*\n\n`;
+                                                                                                                                                                                                                                                                                                                                                                  markets.slice(0, 8).forEach((m, i) => { text += `${i+1}. ${m.icon} ${m.question}\n`; });
+                                                                                                                                                                                                                                                                                                                                                                    if (markets.length > 8) text += `...і ще ${markets.length - 8}`;
+                                                                                                                                                                                                                                                                                                                                                                      try {
+                                                                                                                                                                                                                                                                                                                                                                          await bot.telegram.sendMessage(ADMIN_ID, text, { parse_mode: 'Markdown' });
+                                                                                                                                                                                                                                                                                                                                                                            } catch (err) {
+                                                                                                                                                                                                                                                                                                                                                                                logger.warn('Сповіщення адміна:', err.message);
+                                                                                                                                                                                                                                                                                                                                                                                  }
+                                                                                                                                                                                                                                                                                                                                                                                  }
 
-  let text = `🤖 *Згенеровано ${markets.length} нових ринків:*\n\n`;
-  markets.slice(0, 5).forEach((m, i) => {
-    text += `${i+1}. ${m.icon} ${m.question}\n`;
-  });
-  if (markets.length > 5) text += `...і ще ${markets.length - 5}`;
+                                                                                                                                                                                                                                                                                                                                                                                  async function notifyMarketResolved(market, result, payoutInfo) {
+                                                                                                                                                                                                                                                                                                                                                                                    if (!ADMIN_ID) return;
+                                                                                                                                                                                                                                                                                                                                                                                      const emoji = result === 'yes' ? '✅' : result === 'no' ? '❌' : '↩';
+                                                                                                                                                                                                                                                                                                                                                                                        const text =
+                                                                                                                                                                                                                                                                                                                                                                                            `${emoji} *Ринок вирішено!*\n\n` +
+                                                                                                                                                                                                                                                                                                                                                                                                `${market.icon} ${market.question}\n` +
+                                                                                                                                                                                                                                                                                                                                                                                                    `Результат: *${result.toUpperCase()}*\n` +
+                                                                                                                                                                                                                                                                                                                                                                                                        (payoutInfo.type === 'payout'
+                                                                                                                                                                                                                                                                                                                                                                                                              ? `💰 Виплачено: ${payoutInfo.total?.toLocaleString()} 💎 · ${payoutInfo.winners} переможців`
+                                                                                                                                                                                                                                                                                                                                                                                                                    : '↩ Ставки повернуто');
+                                                                                                                                                                                                                                                                                                                                                                                                                      try {
+                                                                                                                                                                                                                                                                                                                                                                                                                          await bot.telegram.sendMessage(ADMIN_ID, text, { parse_mode: 'Markdown' });
+                                                                                                                                                                                                                                                                                                                                                                                                                            } catch (err) {
+                                                                                                                                                                                                                                                                                                                                                                                                                                logger.warn('Сповіщення:', err.message);
+                                                                                                                                                                                                                                                                                                                                                                                                                                  }
+                                                                                                                                                                                                                                                                                                                                                                                                                                  }
 
-  try {
-    await bot.telegram.sendMessage(ADMIN_ID, text, { parse_mode: 'Markdown' });
-  } catch (err) {
-    logger.warn('Не вдалось сповістити адміна:', err.message);
-  }
-}
+                                                                                                                                                                                                                                                                                                                                                                                                                                  // ВИПРАВЛЕННЯ 5: тижневий звіт перенесено з index.js сюди
+                                                                                                                                                                                                                                                                                                                                                                                                                                  async function notifyAdminWeeklyReport() {
+                                                                                                                                                                                                                                                                                                                                                                                                                                    if (!ADMIN_ID) return;
+                                                                                                                                                                                                                                                                                                                                                                                                                                      const data = db.load();
+                                                                                                                                                                                                                                                                                                                                                                                                                                        const text =
+                                                                                                                                                                                                                                                                                                                                                                                                                                            `📊 *Тижневий звіт OracleX*\n\n` +
+                                                                                                                                                                                                                                                                                                                                                                                                                                                `📈 Всього ринків: ${data.markets.length}\n` +
+                                                                                                                                                                                                                                                                                                                                                                                                                                                    `🟢 Відкритих: ${data.markets.filter(m => m.status==='open').length}\n` +
+                                                                                                                                                                                                                                                                                                                                                                                                                                                        `✅ Вирішених: ${data.markets.filter(m => m.status==='resolved').length}\n` +
+                                                                                                                                                                                                                                                                                                                                                                                                                                                            `⚠️ На перевірці: ${data.markets.filter(m => m.status==='pending_review').length}\n` +
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                `🎲 Ставок: ${data.bets.length}\n` +
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                    `👥 Гравців: ${data.users.length}`;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                      try {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                          await bot.telegram.sendMessage(ADMIN_ID, text, { parse_mode: 'Markdown' });
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                            } catch (err) {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                logger.warn('Тижневий звіт:', err.message);
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  }
 
-/**
- * Сповіщає адміна про ринки що потребують перевірки
- */
-async function notifyAdminPendingReview(market) {
-  if (!ADMIN_ID) return;
-
-  try {
-    await bot.telegram.sendMessage(
-      ADMIN_ID,
-      `⚠️ *Ринок потребує рішення #${market.id}*\n\n` +
-      `${market.question}\n\n` +
-      `AI: ${market.resolveNote}\n\n` +
-      `Введи /pending для перегляду`,
-      { parse_mode: 'Markdown' }
-    );
-  } catch (err) {
-    logger.warn('Не вдалось сповістити адміна:', err.message);
-  }
-}
-
-/**
- * Сповіщає про вирішення ринку (в загальний канал якщо є)
- */
-async function notifyMarketResolved(market, result, payoutInfo) {
-  if (!ADMIN_ID) return;
-
-  const emoji = result === 'yes' ? '✅' : result === 'no' ? '❌' : '↩';
-  const text =
-    `${emoji} *Ринок вирішено!*\n\n` +
-    `${market.icon} ${market.question}\n\n` +
-    `Результат: *${result.toUpperCase()}*\n` +
-    (payoutInfo.type === 'payout'
-      ? `💰 Виплачено: ${payoutInfo.total?.toLocaleString()} 💎\n👥 Переможців: ${payoutInfo.winners}`
-      : '↩ Ставки повернуто');
-
-  try {
-    await bot.telegram.sendMessage(ADMIN_ID, text, { parse_mode: 'Markdown' });
-  } catch (err) {
-    logger.warn('Помилка сповіщення:', err.message);
-  }
-}
-
-module.exports = {
-  bot,
-  notifyAdminNewMarkets,
-  notifyAdminPendingReview,
-  notifyMarketResolved,
-};
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  module.exports = {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    bot,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      notifyAdminNewMarkets,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        notifyMarketResolved,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          notifyAdminWeeklyReport,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          };
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
