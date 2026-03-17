@@ -17,7 +17,7 @@ const { bot, notifyAdminNewMarkets } = require('./bot');
 
 // ── Перевірка конфігурації ───────────────
 function checkConfig() {
-  const required = ['TELEGRAM_BOT_TOKEN', 'OPENAI_API_KEY'];
+  const required = ['TELEGRAM_BOT_TOKEN', 'GEMINI_API_KEY'];
   const missing  = required.filter(key => !process.env[key]);
 
   if (missing.length > 0) {
