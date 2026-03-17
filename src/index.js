@@ -1,135 +1,110 @@
 // src/index.js
-// ════════════════════════════════════════
-//  ORACLEX BOT — ГОЛОВНИЙ ФАЙЛ
-//
-//  Запускає:
-//  1. Telegram бот
-//  2. Cron розклад
-//  3. Всі автоматичні перевірки
-// ════════════════════════════════════════
-
 require('dotenv').config();
-const cron    = require('node-cron');
-const logger  = require('./logger');
-const { generateDailyMarkets }  = require('./generator');
-const { checkExpiredMarkets }   = require('./oracle');
-const { bot, notifyAdminNewMarkets } = require('./bot');
+const cron   = require('node-cron');
+const logger = require('./logger');
+const { generateDailyMarkets } = require('./generator');
+const { checkExpiredMarkets }  = require('./oracle');
+const { bot, notifyAdminNewMarkets, notifyAdminWeeklyReport } = require('./bot');
 
 // ── Перевірка конфігурації ───────────────
 function checkConfig() {
-  const required = ['TELEGRAM_BOT_TOKEN', 'GEMINI_API_KEY'];
-  const missing  = required.filter(key => !process.env[key]);
+  // ВИПРАВЛЕННЯ 1: прибрали OPENAI_API_KEY — використовуємо Gemini
+    const required = ['TELEGRAM_BOT_TOKEN', 'GEMINI_API_KEY'];
+      const missing  = required.filter(key => !process.env[key]);
 
-  if (missing.length > 0) {
-    logger.error(`❌ Відсутні змінні середовища: ${missing.join(', ')}`);
-    logger.error('Скопіюй .env.example у .env і заповни ключі');
-    process.exit(1);
-  }
+        if (missing.length > 0) {
+            logger.error(`❌ Відсутні змінні: ${missing.join(', ')}`);
+                process.exit(1);
+                  }
+                    if (!process.env.NEWS_API_KEY) {
+                        logger.warn('⚠️  NEWS_API_KEY не встановлено — використовуються fallback шаблони');
+                          }
+                            logger.info('✅ Конфігурація перевірена');
+                            }
 
-  if (!process.env.NEWS_API_KEY) {
-    logger.warn('⚠️  NEWS_API_KEY не встановлено — будуть використані fallback шаблони');
-  }
+                            // ── Cron Розклад ─────────────────────────
+                            function startScheduler() {
+                              const tz = process.env.TIMEZONE || 'Europe/Kyiv';
 
-  logger.info('✅ Конфігурація перевірена');
-}
+                                // 08:00 — генерація нових ринків
+                                  cron.schedule('0 8 * * *', async () => {
+                                      logger.info('⏰ 08:00 — Генерую щоденні ринки...');
+                                          try {
+                                                const markets = await generateDailyMarkets();
+                                                      await notifyAdminNewMarkets(markets);
+                                                          } catch (err) {
+                                                                logger.error('❌ Помилка генерації:', err.message);
+                                                                    }
+                                                                      }, { timezone: tz });
 
-// ── Cron Розклад ─────────────────────────
-function startScheduler() {
-  const tz = process.env.TIMEZONE || 'Europe/Kyiv';
+                                                                        // Кожні 5 хвилин — перевірка закінчених ринків
+                                                                          cron.schedule('*/5 * * * *', async () => {
+                                                                              try {
+                                                                                    await checkExpiredMarkets();
+                                                                                        } catch (err) {
+                                                                                              logger.error('❌ Помилка перевірки:', err.message);
+                                                                                                  }
+                                                                                                    });
 
-  // ─── Щодня о 08:00 — генерувати нові ринки
-  cron.schedule('0 8 * * *', async () => {
-    logger.info('⏰ 08:00 — Генерую щоденні ринки...');
-    try {
-      const markets = await generateDailyMarkets();
-      await notifyAdminNewMarkets(markets);
-      logger.info(`✅ Створено ${markets.length} ринків`);
-    } catch (err) {
-      logger.error('❌ Помилка генерації:', err.message);
-    }
-  }, { timezone: tz });
+                                                                                                      // 20:00 — вечірня перевірка
+                                                                                                        cron.schedule('0 20 * * *', async () => {
+                                                                                                            logger.info('⏰ 20:00 — Вечірня перевірка...');
+                                                                                                                try { await checkExpiredMarkets(); }
+                                                                                                                    catch (err) { logger.error('❌', err.message); }
+                                                                                                                      }, { timezone: tz });
 
-  // ─── Кожні 5 хвилин — перевіряти закінчені ринки
-  cron.schedule('*/5 * * * *', async () => {
-    try {
-      const resolved = await checkExpiredMarkets();
-      if (resolved.length > 0) {
-        logger.info(`⚡ Вирішено ${resolved.length} ринків`);
-      }
-    } catch (err) {
-      logger.error('❌ Помилка перевірки ринків:', err.message);
-    }
-  });
+                                                                                                                        // Щопонеділка 09:00 — тижневий звіт
+                                                                                                                          cron.schedule('0 9 * * 1', async () => {
+                                                                                                                              try { await notifyAdminWeeklyReport(); }
+                                                                                                                                  catch (err) { logger.error('❌ Помилка звіту:', err.message); }
+                                                                                                                                    }, { timezone: tz });
 
-  // ─── Щодня о 09:00 — вечірня повторна перевірка
-  cron.schedule('0 20 * * *', async () => {
-    logger.info('⏰ 20:00 — Вечірня перевірка ринків...');
-    try {
-      await checkExpiredMarkets();
-    } catch (err) {
-      logger.error('❌ Помилка вечірньої перевірки:', err.message);
-    }
-  }, { timezone: tz });
+                                                                                                                                      logger.info(`⏰ Планувальник запущено (${tz})`);
+                                                                                                                                      }
 
-  // ─── Щопонеділка о 09:00 — тижневий звіт адміну
-  cron.schedule('0 9 * * 1', async () => {
-    logger.info('📊 Тижневий звіт...');
-    const db_data = require('./db').load();
-    const stats = {
-      totalMarkets:   db_data.markets.length,
-      openMarkets:    db_data.markets.filter(m => m.status === 'open').length,
-      resolvedToday:  db_data.markets.filter(m =>
-        m.resolvedAt && m.resolvedAt.startsWith(new Date().toISOString().slice(0, 10))
-      ).length,
-      totalBets:      db_data.bets.length,
-      totalUsers:     db_data.users.length,
-    };
-    logger.info('📊 Статистика:', JSON.stringify(stats));
-  }, { timezone: tz });
+                                                                                                                                      // ── Запуск ───────────────────────────────
+                                                                                                                                      async function main() {
+                                                                                                                                        logger.info('🚀 OracleX Bot запускається...');
 
-  logger.info('⏰ Планувальник запущено (часовий пояс: ' + tz + ')');
-}
+                                                                                                                                          checkConfig();
 
-// ── Запуск ───────────────────────────────
-async function main() {
-  logger.info('🚀 OracleX Bot запускається...');
+                                                                                                                                            // Запускаємо бот
+                                                                                                                                              // ВИПРАВЛЕННЯ 2: await bot.launch() щоб зловити помилки
+                                                                                                                                                try {
+                                                                                                                                                    await bot.launch();
+                                                                                                                                                        logger.info('🤖 Telegram бот запущено');
+                                                                                                                                                          } catch (err) {
+                                                                                                                                                              logger.error('❌ Помилка запуску бота:', err.message);
+                                                                                                                                                                  // Не зупиняємо процес — cron і генерація можуть працювати без бота
+                                                                                                                                                                    }
 
-  // 1. Перевірка конфігурації
-  checkConfig();
+                                                                                                                                                                      startScheduler();
 
-  // 2. Запускаємо Telegram бот
-  bot.launch()
-    .then(() => logger.info('🤖 Telegram бот запущено'))
-    .catch(err => logger.error('❌ Помилка запуску бота:', err.message));
+                                                                                                                                                                        // Генеруємо ринки якщо немає
+                                                                                                                                                                          const { getOpenMarkets } = require('./db');
+                                                                                                                                                                            if (getOpenMarkets().length === 0) {
+                                                                                                                                                                                logger.info('📭 Немає ринків — генерую перші...');
+                                                                                                                                                                                    try {
+                                                                                                                                                                                          const markets = await generateDailyMarkets();
+                                                                                                                                                                                                await notifyAdminNewMarkets(markets);
+                                                                                                                                                                                                      logger.info(`✅ Створено ${markets.length} ринків`);
+                                                                                                                                                                                                          } catch (err) {
+                                                                                                                                                                                                                logger.error('❌ Помилка початкової генерації:', err.message);
+                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                      } else {
+                                                                                                                                                                                                                          logger.info(`📊 Є ${getOpenMarkets().length} відкритих ринків`);
+                                                                                                                                                                                                                            }
 
-  // 3. Запускаємо планувальник
-  startScheduler();
+                                                                                                                                                                                                                              logger.info('✅ OracleX Bot готовий!');
+                                                                                                                                                                                                                              }
 
-  // 4. При першому запуску — одразу генеруємо ринки (якщо їх немає)
-  const { getOpenMarkets } = require('./db');
-  const existing = getOpenMarkets();
+                                                                                                                                                                                                                              // Graceful shutdown
+                                                                                                                                                                                                                              process.once('SIGINT',  () => { bot.stop('SIGINT');  process.exit(0); });
+                                                                                                                                                                                                                              process.once('SIGTERM', () => { bot.stop('SIGTERM'); process.exit(0); });
 
-  if (existing.length === 0) {
-    logger.info('📭 Немає відкритих ринків — генерую перші...');
-    try {
-      const markets = await generateDailyMarkets();
-      await notifyAdminNewMarkets(markets);
-      logger.info(`✅ Початкові ринки створені: ${markets.length}`);
-    } catch (err) {
-      logger.error('❌ Помилка початкової генерації:', err.message);
-    }
-  } else {
-    logger.info(`📊 Є ${existing.length} відкритих ринків`);
-  }
+                                                                                                                                                                                                                              main().catch(err => {
+                                                                                                                                                                                                                                logger.error('💥 Критична помилка:', err.message);
+                                                                                                                                                                                                                                  process.exit(1);
+                                                                                                                                                                                                                                  });
 
-  logger.info('✅ OracleX Bot готовий до роботи!');
-}
-
-// ── Graceful Shutdown ────────────────────
-process.once('SIGINT',  () => { bot.stop('SIGINT');  process.exit(0); });
-process.once('SIGTERM', () => { bot.stop('SIGTERM'); process.exit(0); });
-
-main().catch(err => {
-  logger.error('💥 Критична помилка:', err);
-  process.exit(1);
-});
+                                                                                                                                                                                                                                  
