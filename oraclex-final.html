@@ -1,0 +1,3632 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#060a12">
+<meta name="description" content="OracleX — передбачай події, виграй монети">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- Preconnect для швидшого завантаження шрифтів -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap">
+<title>OracleX</title>
+<style>
+/* ════════════════════════════════════════
+   DESIGN TOKENS — всі змінні в одному місці
+   Щоб змінити тему — редагуй тільки тут
+════════════════════════════════════════ */
+:root{
+  /* ── Backgrounds ── */
+  --bg:        #060a12;               /* основний фон */
+  --card:      rgba(12,21,34,.72);    /* glassmorphism картки */
+  --card2:     rgba(16,28,46,.80);    /* вкладені елементи */
+  --blur:      blur(16px);            /* розмиття скла */
+
+  /* ── Brand Colors ── */
+  --g:         #00e5a0;   /* зелений акцент (YES, прибуток) */
+  --g2:        #00b87a;   /* темніший зелений */
+  --r:         #ff3057;   /* червоний акцент (NO, збиток) */
+  --r2:        #c81f3e;   /* темніший червоний ← був відсутній! */
+  --gold:      #ffb800;   /* золотий (монети, streak) */
+  --gold2:     #ffd060;   /* світліший золотий */
+  --blue:      #0ea5e9;   /* блакитний (статистика) */
+  --purple:    #8b5cf6;   /* фіолетовий (challenge) */
+
+  /* ── Typography ── */
+  --text:      #e2f0ff;   /* основний текст */
+  --sub:       #4a6a8e;   /* вторинний текст */
+
+  /* ── Borders ── */
+  --b2:        rgba(255,255,255,.06);   /* тонкі межі */
+  --b-green:   rgba(0,229,160,.2);      /* зелена межа */
+  --b-gold:    rgba(255,184,0,.2);      /* золота межа */
+
+  /* ── Shadows / Glows ── */
+  --glow-g:    0 4px 20px rgba(0,229,160,.3);
+  --glow-r:    0 4px 20px rgba(255,48,87,.3);
+  --glow-gold: 0 4px 20px rgba(255,184,0,.3);
+
+  /* ── Spacing ── */
+  --r-card:    16px;  /* border-radius карток */
+  --r-btn:     12px;  /* border-radius кнопок */
+  --r-pill:    20px;  /* border-radius пілюль */
+
+  /* ── Typography Scale ── */
+  --f-display: 'Barlow Condensed', sans-serif;
+  --f-body:    'Inter', sans-serif;
+
+  /* ── Animation ── */
+  --ease:      cubic-bezier(.4,0,.2,1);
+  --dur-fast:  .15s;
+  --dur-mid:   .28s;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
+
+/* ── iOS BOUNCE + ANDROID SCROLL FIX ── */
+html {
+  height: 100%;
+  height: 100dvh; /* dynamic viewport — враховує адресний рядок браузера */
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+body {
+  background: radial-gradient(ellipse at top, #0c1a2e, #060a12);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  max-width: 430px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none;
+}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,160,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,.02) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0;}
+
+/* SCREENS */
+.screen{display:none;flex-direction:column;height:100%;height:100dvh;position:relative;z-index:1;}
+.screen.active{display:flex;animation:fu var(--dur-mid) var(--ease);}
+@keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* TOPBAR */
+.tb{padding:10px 14px 8px;display:flex;align-items:center;gap:9px;z-index:80;background:rgba(6,10,18,.75);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-bottom:1px solid rgba(0,229,160,.07);flex-shrink:0;}
+.av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#122040,#0a1830);border:1.5px solid rgba(0,229,160,.3);display:flex;align-items:center;justify-content:center;font-size:16px;position:relative;flex-shrink:0;}
+.av .dot{position:absolute;bottom:0;right:0;width:9px;height:9px;border-radius:50%;background:var(--g);border:1.5px solid var(--bg);}
+.tb-mid{flex:1;}
+.tb-name{font-size:13px;font-weight:700;}
+.tb-sub{font-size:10px;color:var(--sub);display:flex;align-items:center;gap:4px;margin-top:1px;}
+.lvl{background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.2);border-radius:5px;padding:1px 6px;font-size:9px;font-weight:800;color:var(--gold);}
+.bal-pill{display:flex;align-items:center;gap:5px;background:rgba(0,229,160,.07);border:1px solid var(--b-green);border-radius:var(--r-pill);padding:5px 11px;flex-shrink:0;}
+.bal-n{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--g);}
+.streak-chip{font-size:13px;font-weight:800;color:var(--gold2);font-family:'Barlow Condensed',sans-serif;flex-shrink:0;}
+.back-btn{font-size:24px;cursor:pointer;color:var(--sub);padding:0 4px;flex-shrink:0;}
+.tb-title{flex:1;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:900;letter-spacing:.5px;}
+
+/* BOTTOM NAV */
+.bnav{background:rgba(6,10,18,.75);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-top:1px solid rgba(0,229,160,.08);display:flex;flex-shrink:0;z-index:90;padding-bottom:env(safe-area-inset-bottom);}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;padding:9px 0 7px;cursor:pointer;gap:3px;transition:opacity var(--dur-fast);}
+.ni-ic{font-size:20px;transition:transform var(--dur-fast) var(--ease),filter var(--dur-fast) var(--ease);}
+.ni-lb{font-size:9px;font-weight:700;color:var(--sub);font-family:var(--f-display);transition:color var(--dur-fast);}
+.ni.active .ni-lb{color:var(--g);}
+.ni.active .ni-ic{filter:drop-shadow(0 0 4px rgba(0,229,160,.7));transform:scale(1.1);}
+.ni:active .ni-ic{transform:scale(.88)!important;}
+
+/* SCROLL */
+.sc{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
+.sc::-webkit-scrollbar{display:none;}
+.bpad{height:16px;}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TIKTOK FEED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#s-feed{overflow:hidden;}
+
+/* vertical scroll-snap container */
+#feed-scroll{
+  flex:1;
+  overflow-y:scroll;
+  overflow-x:hidden;
+  scroll-snap-type:y mandatory;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  min-height:0;
+}
+#feed-scroll::-webkit-scrollbar{display:none;}
+
+/* each card = full viewport slot */
+.scard{
+  scroll-snap-align:start;
+  scroll-snap-stop:always;
+  width:100%;
+  height:100%; /* filled by JS */
+  flex-shrink:0;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  background:var(--card);
+  touch-action:pan-y; /* allow vertical scroll */
+}
+
+/* FULL BG visual */
+.sv{
+  position:absolute;
+  inset:0;
+  overflow:hidden;
+  z-index:0;
+}
+/* texture noise — видалено для економії CPU */
+.sv-icon{
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-70%);
+  font-size:100px;
+  opacity:.18;
+  z-index:1;
+  filter:blur(2px);
+  pointer-events:none;
+}
+.sv-ov{
+  position:absolute;inset:0;
+  background:linear-gradient(
+    to bottom,
+    rgba(6,10,18,.5) 0%,
+    transparent 30%,
+    transparent 45%,
+    rgba(6,10,18,.97) 75%
+  );
+  z-index:1;
+}
+.tdot{width:6px;height:6px;border-radius:50%;background:var(--gold2);animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* CONTENT — повна картка */
+.sb{
+  position:absolute;
+  inset:0;
+  z-index:2;
+  display:flex;
+  flex-direction:column;
+  background:linear-gradient(
+    to bottom,
+    rgba(6,10,18,.85) 0%,
+    rgba(6,10,18,.1) 18%,
+    rgba(6,10,18,.1) 42%,
+    rgba(6,10,18,.97) 63%
+  );
+}
+/* Мета рядок — зверху, фіксована висота */
+.sb-meta{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:12px 14px 0;
+  gap:8px;
+  flex-shrink:0;
+  height:44px;
+}
+.sb-cat{
+  background:rgba(6,10,18,.85);
+  backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:8px;
+  padding:5px 10px;
+  font-size:11px;font-weight:700;
+  white-space:nowrap;flex-shrink:0;line-height:1;
+}
+.card-type-tag{
+  display:inline-flex;align-items:center;
+  background:rgba(6,10,18,.85);
+  border:1px solid;border-radius:6px;
+  padding:5px 10px;
+  font-family:var(--f-display);
+  font-size:11px;font-weight:800;letter-spacing:.5px;
+  white-space:nowrap;line-height:1;
+}
+.sb-timer{
+  background:rgba(6,10,18,.85);
+  backdrop-filter:blur(8px);
+  border:1px solid rgba(255,184,0,.3);border-radius:8px;
+  padding:5px 10px;font-size:11px;font-weight:700;color:var(--gold2);
+  display:flex;align-items:center;gap:4px;
+  white-space:nowrap;flex-shrink:0;line-height:1;
+}
+/* Контентна зона */
+.sb-content{
+  flex:1;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  padding:8px 16px 14px;
+  overflow-y:auto;
+  scrollbar-width:none;
+}
+.sb-content::-webkit-scrollbar{display:none;}
+/* Перший елемент притягується донизу через auto margin */
+.sb-content > *:first-child{
+  margin-top:auto;
+}
+.sq{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:24px;font-weight:900;line-height:1.2;
+  color:var(--text);margin-bottom:5px;
+  /* прибираємо line-clamp — показуємо повну назву */
+  word-break:break-word;
+}
+.ss{font-size:12px;color:rgba(226,240,255,.7);line-height:1.45;margin-bottom:10px;}
+.pt{height:6px;border-radius:4px;background:rgba(255,48,87,.25);overflow:hidden;margin-bottom:6px;}
+.pf{height:100%;border-radius:4px;background:linear-gradient(to right,var(--g2),var(--g));}
+.pr{display:flex;justify-content:space-between;margin-bottom:10px;}
+.py{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--g);}
+.pn{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--r);}
+
+/* social proof */
+.soc{display:flex;align-items:center;gap:6px;margin-bottom:12px;font-size:11px;color:rgba(226,240,255,.6);}
+.savs{display:flex;}
+.sa{width:18px;height:18px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:10px;border:1.5px solid rgba(255,255,255,.1);margin-right:-5px;}
+.sb2{color:var(--gold2);font-weight:700;}
+
+/* BIG YES / NO buttons */
+.rw{display:flex;gap:10px;}
+.rwy{
+  flex:1;padding:14px 10px;border-radius:var(--r-btn);border:none;cursor:pointer;
+  background:linear-gradient(135deg,#005533,#009960);
+  color:#fff;font-family:var(--f-display);
+  font-size:22px;font-weight:900;letter-spacing:.5px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  box-shadow:var(--glow-g);
+  transition:transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.rwn{
+  flex:1;padding:14px 10px;border-radius:var(--r-btn);border:none;cursor:pointer;
+  background:linear-gradient(135deg,#770020,#bb1a36);
+  color:#fff;font-family:var(--f-display);
+  font-size:22px;font-weight:900;letter-spacing:.5px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  box-shadow:var(--glow-r);
+  transition:transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.rwy:active,.rwn:active{transform:scale(.95);}
+.rwy.voted{background:var(--g);color:#03120a;box-shadow:0 4px 24px rgba(0,229,160,.5);}
+.rwn.voted{background:var(--r);color:#fff;box-shadow:0 4px 24px rgba(255,48,87,.5);}
+.rwp{font-size:11px;opacity:.8;font-weight:600;letter-spacing:0;}
+
+/* ── CREATE BUTTON IN NAV ── */
+.ni-create{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:4px 0 7px;cursor:pointer;gap:3px;
+}
+.ni-create-circle{
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(135deg,var(--g2),var(--g));
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;font-weight:300;color:#03120a;
+  margin-top:-16px;
+  border:2px solid var(--bg);
+  box-shadow:0 0 20px rgba(0,229,160,.5);
+  transition:transform var(--dur-fast) var(--ease);
+  line-height:1;
+}
+.ni-create:active .ni-create-circle{transform:scale(.9);}
+.ni-create-lb{
+  font-size:9px;font-weight:800;color:var(--g);
+  font-family:var(--f-display);letter-spacing:.3px;
+}
+
+/* ── CREATE FORM ── */
+.cf-section{padding:0 14px 14px;}
+.cf-label{
+  font-family:var(--f-display);font-size:13px;font-weight:700;
+  color:var(--text);margin-bottom:4px;letter-spacing:.3px;
+}
+.cf-req{color:var(--r);}
+.cf-hint{font-size:10px;color:var(--sub);margin-bottom:8px;line-height:1.5;}
+.cf-input{
+  width:100%;background:var(--card);
+  border:1px solid var(--b2);border-radius:12px;
+  padding:12px 14px;color:var(--text);
+  font-family:var(--f-body);font-size:14px;
+  resize:none;outline:none;
+  transition:border-color var(--dur-fast);
+  caret-color:var(--g);
+}
+.cf-input:focus{border-color:var(--g);}
+.cf-input::placeholder{color:var(--sub);}
+.cf-textarea{height:72px;line-height:1.5;}
+.cf-counter{font-size:10px;color:var(--sub);text-align:right;margin-top:4px;}
+
+.cf-cats{display:flex;flex-wrap:wrap;gap:7px;}
+.cf-cat{
+  padding:7px 14px;border-radius:20px;
+  background:var(--card);border:1px solid var(--b2);
+  font-size:12px;font-weight:600;color:var(--sub);cursor:pointer;
+  transition:all var(--dur-fast);
+}
+.cf-cat.active{background:rgba(0,229,160,.12);border-color:var(--g);color:var(--g);}
+
+.cf-icons{display:flex;flex-wrap:wrap;gap:8px;}
+.cf-icon{
+  width:42px;height:42px;border-radius:11px;
+  background:var(--card);border:1px solid var(--b2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;cursor:pointer;
+  transition:all var(--dur-fast);
+}
+.cf-icon.active{background:rgba(0,229,160,.12);border-color:var(--g);}
+
+.cf-deadlines{display:flex;gap:7px;flex-wrap:wrap;}
+.cf-dl{
+  padding:7px 14px;border-radius:20px;
+  background:var(--card);border:1px solid var(--b2);
+  font-size:12px;font-weight:700;color:var(--sub);cursor:pointer;
+  transition:all var(--dur-fast);font-family:var(--f-display);
+}
+.cf-dl.active{background:rgba(255,184,0,.12);border-color:var(--gold);color:var(--gold2);}
+
+.cf-starter-row{display:flex;flex-direction:column;gap:10px;}
+.cf-side-btns{display:flex;gap:8px;}
+.cf-side{
+  flex:1;padding:11px;border-radius:12px;border:none;cursor:pointer;
+  font-family:var(--f-display);font-size:17px;font-weight:900;
+  transition:all var(--dur-fast);
+}
+.cf-yes{background:rgba(0,229,160,.1);color:var(--g);border:1px solid rgba(0,229,160,.25);}
+.cf-no {background:rgba(255,48,87,.1); color:var(--r);border:1px solid rgba(255,48,87,.25);}
+.cf-yes.active{background:var(--g);color:#03120a;box-shadow:var(--glow-g);}
+.cf-no.active {background:var(--r);color:#fff;   box-shadow:var(--glow-r);}
+
+.cf-amount-row{display:flex;align-items:center;gap:8px;}
+.cf-amount-label{font-size:12px;color:var(--sub);white-space:nowrap;}
+.cf-amounts{display:flex;gap:6px;}
+.cf-am{
+  padding:6px 12px;border-radius:20px;border:1px solid var(--b2);
+  background:var(--card);color:var(--sub);
+  font-family:var(--f-display);font-size:13px;font-weight:700;cursor:pointer;
+  transition:all var(--dur-fast);
+}
+.cf-am.active{background:rgba(255,184,0,.12);border-color:var(--gold);color:var(--gold2);}
+
+/* PREVIEW */
+.cf-preview{
+  background:var(--card);border:1px solid rgba(0,229,160,.2);
+  border-radius:16px;padding:14px;
+  box-shadow:0 0 20px rgba(0,229,160,.06);
+}
+.cf-prev-icon{font-size:32px;margin-bottom:8px;}
+.cf-prev-q{
+  font-family:var(--f-display);font-size:18px;font-weight:800;
+  color:var(--text);line-height:1.3;margin-bottom:12px;
+}
+.cf-prev-bar{display:flex;justify-content:space-between;}
+.cf-prev-yes{font-size:12px;font-weight:700;color:var(--g);}
+.cf-prev-no {font-size:12px;font-weight:700;color:var(--r);}
+
+/* SUBMIT */
+.cf-submit{
+  width:100%;padding:16px;border-radius:14px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--g2),var(--g));
+  color:#03120a;font-family:var(--f-display);
+  font-size:18px;font-weight:900;letter-spacing:.5px;
+  box-shadow:var(--glow-g);
+  transition:all var(--dur-fast) var(--ease);
+}
+.cf-submit:disabled{
+  background:var(--card2);color:var(--sub);
+  box-shadow:none;cursor:not-allowed;
+}
+.cf-submit:not(:disabled):active{transform:scale(.97);}
+.pool-section{margin-bottom:10px;}
+.pool-bar-wrap{
+  display:flex;
+  height:10px; /* трохи вища для кращої видимості */
+  border-radius:5px;
+  overflow:hidden;
+  background:rgba(255,255,255,.06);
+  margin-bottom:6px;
+  gap:2px; /* невеликий зазор між зеленою і червоною */
+}
+.pool-bar-yes{
+  background:linear-gradient(to right,#00965a,var(--g)); /* яскраво зелений */
+  transition:width .4s var(--ease);
+  border-radius:5px 0 0 5px;
+}
+.pool-bar-no{
+  background:linear-gradient(to right,var(--r),#cc0030); /* яскраво червоний */
+  transition:width .4s var(--ease);
+  border-radius:0 5px 5px 0;
+  margin-left:auto;
+}
+.pool-labels{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.pool-lbl-yes{display:flex;align-items:center;gap:6px;}
+.pool-lbl-no {display:flex;align-items:center;gap:6px;}
+.pool-pct-y{font-family:var(--f-display);font-size:14px;font-weight:800;color:var(--g);}
+.pool-pct-n{font-family:var(--f-display);font-size:14px;font-weight:800;color:var(--r);}
+.pool-sum{font-size:11px;color:rgba(226,240,255,.6);font-weight:600;}
+.pool-total{font-size:10px;color:var(--sub);text-align:center;}
+.pool-total b{color:var(--gold2);}
+
+/* ── BET SIZE SELECTOR ── */
+.bet-size-row{
+  display:flex;align-items:center;gap:5px;
+  margin-bottom:10px;flex-wrap:wrap;
+}
+.bet-label{font-size:11px;color:var(--sub);font-weight:600;white-space:nowrap;}
+.bet-chip{
+  padding:5px 11px;border-radius:20px;border:1px solid var(--b2);
+  background:var(--card2);color:var(--sub);
+  font-family:var(--f-display);font-size:13px;font-weight:700;cursor:pointer;
+  transition:all var(--dur-fast) var(--ease);
+}
+.bet-chip:active{transform:scale(.92);}
+.bc-active{
+  background:rgba(0,229,160,.15);
+  border-color:var(--g);color:var(--g);
+  box-shadow:0 0 10px rgba(0,229,160,.2);
+}
+.bet-bal{font-size:10px;color:var(--sub);margin-left:auto;white-space:nowrap;}
+.bet-bal b{color:var(--gold2);}
+
+/* ── BET PENDING STATE ── */
+/* ── BET PENDING STATE ── */
+.bet-pending-wrap{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.bet-pending{
+  display:flex;align-items:center;gap:10px;
+  background:rgba(0,229,160,.07);
+  border:1px solid rgba(0,229,160,.2);
+  border-radius:var(--r-btn);padding:12px;
+  width:100%;
+}
+.bp-side{
+  font-family:var(--f-display);font-size:20px;font-weight:900;
+  color:var(--g);white-space:nowrap;flex-shrink:0;
+}
+.bp-info{flex:1;min-width:0;overflow:hidden;}
+.bp-amount{font-size:11px;color:var(--sub);}
+.bp-payout{font-size:11px;color:var(--sub);margin-top:2px;}
+.resolve-btn{
+  background:linear-gradient(135deg,rgba(255,184,0,.2),rgba(255,184,0,.1));
+  border:1px solid rgba(255,184,0,.3);border-radius:9px;
+  padding:8px 10px;font-family:var(--f-display);font-size:13px;font-weight:800;
+  color:var(--gold2);cursor:pointer;white-space:nowrap;flex-shrink:0;
+  transition:all var(--dur-fast) var(--ease);
+}
+.resolve-btn:active{transform:scale(.95);}
+
+/* ── BET DONE STATES ── */
+.bet-done{
+  width:100%;padding:14px;border-radius:var(--r-btn);text-align:center;
+  font-family:var(--f-display);font-size:22px;font-weight:900;letter-spacing:.5px;
+}
+.bet-done-sub{font-size:12px;font-weight:600;margin-top:4px;letter-spacing:0;}
+.win-done{
+  background:rgba(0,229,160,.12);border:1px solid rgba(0,229,160,.3);
+  color:var(--g);box-shadow:var(--glow-g);
+}
+.loss-done{
+  background:rgba(255,48,87,.1);border:1px solid rgba(255,48,87,.25);
+  color:var(--r);
+}
+.refund-done{
+  background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.25);
+  color:var(--gold2);
+}
+  position:absolute;inset:0;z-index:5;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(6,10,18,.6);backdrop-filter:blur(4px);
+  font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:900;
+  letter-spacing:2px;gap:8px;
+}
+.voted-ov.yes-v{color:var(--g);text-shadow:0 0 40px rgba(0,229,160,.6);}
+.voted-ov.no-v{color:var(--r);text-shadow:0 0 40px rgba(255,48,87,.6);}
+.voted-pts{font-size:22px;opacity:.8;}
+
+/* scroll progress dots */
+.feed-dots{
+  position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:5px;z-index:4;
+}
+.fdot{width:4px;height:4px;border-radius:2px;background:rgba(255,255,255,.25);transition:.3s;}
+.fdot.active{height:16px;background:var(--g);border-radius:2px;}
+
+/* scroll hint */
+.scroll-hint{
+  position:absolute;bottom:6px;left:50%;transform:translateX(-50%);
+  z-index:3;font-size:11px;color:rgba(255,255,255,.35);
+  display:flex;flex-direction:column;align-items:center;gap:1px;
+  animation:fadeHint 3s ease forwards;
+}
+@keyframes fadeHint{0%,60%{opacity:1}100%{opacity:0}}
+.sh-arrow{font-size:16px;animation:bounce2 .8s ease-in-out infinite alternate;}
+@keyframes bounce2{from{transform:translateY(0)}to{transform:translateY(4px)}}
+
+/* EMPTY STATE */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;padding:24px;text-align:center;}
+.empty-ico{font-size:60px;animation:bob .9s ease-in-out infinite alternate;}
+@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-8px)}}
+.empty-t{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;}
+.empty-s{font-size:12px;color:var(--sub);line-height:1.6;}
+.reload-btn{background:linear-gradient(135deg,#006644,#00a86a);border:none;border-radius:13px;padding:12px 28px;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(0,200,100,.3);}
+
+/* RESULT FLASH */
+/* .rf — видалено (не використовується) */
+
+/* COIN BURST */
+.cb{position:fixed;pointer-events:none;z-index:600;font-size:22px;font-weight:900;font-family:'Barlow Condensed',sans-serif;color:var(--g);animation:cbUp .9s ease forwards;}
+@keyframes cbUp{0%{opacity:1;transform:translateY(0) scale(1.2)}100%{opacity:0;transform:translateY(-80px) scale(.8)}}
+.cp{position:fixed;pointer-events:none;z-index:600;font-size:16px;animation:cpOut .8s ease forwards;}
+@keyframes cpOut{0%{opacity:1;transform:translate(0,0)}100%{opacity:0;transform:var(--e)}}
+
+/* STREAK TOAST */
+/* TOAST — повноекранний flash на 2 секунди */
+.st{
+  position:fixed;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  gap:8px;
+  z-index:500;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .2s ease;
+  background:rgba(0,229,160,.12);
+  backdrop-filter:blur(2px);
+}
+.st.show{opacity:1;}
+.st.bad{background:rgba(255,48,87,.12);}
+
+/* текст всередині flash */
+.st-inner{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:32px;
+  font-weight:900;
+  color:var(--g);
+  text-align:center;
+  padding:0 24px;
+  text-shadow:0 0 30px rgba(0,229,160,.6);
+  letter-spacing:.5px;
+  line-height:1.3;
+}
+.st.bad .st-inner{
+  color:var(--r);
+  text-shadow:0 0 30px rgba(255,48,87,.6);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   FEED TABS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.feed-tabs{
+  display:flex;gap:0;flex-shrink:0;
+  background:rgba(6,10,18,.9);
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.feed-tab{
+  flex:1;padding:10px 0 8px;text-align:center;
+  font-family:var(--f-display);font-size:13px;font-weight:800;
+  color:var(--sub);cursor:pointer;letter-spacing:.3px;
+  border-bottom:2px solid transparent;
+  transition:all var(--dur-fast) var(--ease);
+}
+.feed-tab.active{
+  color:var(--g);
+  border-bottom-color:var(--g);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   HISTORY CARDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.hist-summary{
+  background:var(--card);backdrop-filter:var(--blur);
+  border:1px solid var(--b2);border-radius:14px;
+  padding:14px;display:flex;gap:0;
+  margin-bottom:4px;
+}
+.hist-stat{
+  flex:1;text-align:center;
+  border-right:1px solid var(--b2);
+}
+.hist-stat:last-child{border-right:none;}
+.hist-stat-val{
+  font-family:var(--f-display);font-size:22px;font-weight:900;
+  line-height:1;margin-bottom:3px;
+}
+.hist-stat-lbl{font-size:10px;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;}
+
+.hist-card{
+  background:var(--card);backdrop-filter:var(--blur);
+  border:1px solid var(--b2);border-radius:14px;
+  padding:13px;display:flex;gap:12px;align-items:flex-start;
+  transition:all var(--dur-fast);
+}
+.hist-icon{
+  width:42px;height:42px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;flex-shrink:0;
+  border:1px solid var(--b2);
+}
+.hist-icon.win{background:rgba(0,229,160,.1);border-color:rgba(0,229,160,.2);}
+.hist-icon.loss{background:rgba(255,48,87,.1);border-color:rgba(255,48,87,.2);}
+.hist-icon.refund{background:rgba(255,184,0,.1);border-color:rgba(255,184,0,.2);}
+.hist-icon.pending{background:rgba(139,92,246,.1);border-color:rgba(139,92,246,.2);}
+.hist-body{flex:1;min-width:0;}
+.hist-q{
+  font-family:var(--f-display);font-size:15px;font-weight:800;
+  color:var(--text);line-height:1.2;margin-bottom:4px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.hist-meta{font-size:11px;color:var(--sub);margin-bottom:4px;}
+.hist-result{
+  font-family:var(--f-display);font-size:13px;font-weight:800;
+}
+.hist-result.win{color:var(--g);}
+.hist-result.loss{color:var(--r);}
+.hist-result.refund{color:var(--gold2);}
+.hist-result.pending{color:#a78bfa;}
+.hist-right{
+  display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;
+}
+.hist-amount{
+  font-family:var(--f-display);font-size:18px;font-weight:900;
+}
+.hist-amount.pos{color:var(--g);}
+.hist-amount.neg{color:var(--r);}
+.hist-amount.neu{color:var(--gold2);}
+.hist-time{font-size:10px;color:var(--sub);}
+
+.hist-empty{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:60px 24px;text-align:center;gap:12px;
+}
+.hist-empty-ico{font-size:48px;}
+.hist-empty-t{font-family:var(--f-display);font-size:20px;font-weight:800;}
+.hist-empty-s{font-size:12px;color:var(--sub);line-height:1.6;}
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   МІСІЇ ДНЯ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.missions{margin:0 14px 12px;background:linear-gradient(135deg,rgba(139,92,246,.08),rgba(139,92,246,.03));border:1px solid rgba(139,92,246,.25);border-radius:16px;padding:14px;}
+.missions-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.missions-title{font-family:var(--f-display);font-size:17px;font-weight:800;color:#a78bfa;}
+.missions-progress-text{font-size:11px;color:var(--sub);font-weight:600;}
+.missions-bar-wrap{height:5px;border-radius:3px;background:rgba(139,92,246,.15);overflow:hidden;margin-bottom:12px;}
+.missions-bar-fill{height:100%;border-radius:3px;background:linear-gradient(to right,#7c3aed,#a78bfa);transition:width .4s var(--ease);}
+.mission-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:11px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);margin-bottom:7px;transition:all var(--dur-fast);}
+.mission-item:last-child{margin-bottom:0;}
+.mission-item.done{background:rgba(0,229,160,.07);border-color:rgba(0,229,160,.2);opacity:.75;}
+.mission-check{width:24px;height:24px;border-radius:50%;border:2px solid rgba(139,92,246,.4);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;transition:all var(--dur-fast);}
+.mission-item.done .mission-check{background:var(--g);border-color:var(--g);}
+.mission-info{flex:1;}
+.mission-text{font-size:13px;font-weight:600;color:var(--text);line-height:1.3;}
+.mission-item.done .mission-text{color:var(--sub);text-decoration:line-through;}
+.mission-progress-small{font-size:10px;color:var(--sub);margin-top:2px;}
+.mission-reward{font-family:var(--f-display);font-size:14px;font-weight:800;color:var(--gold2);white-space:nowrap;flex-shrink:0;}
+.missions-bonus{margin-top:10px;padding:10px;border-radius:10px;background:linear-gradient(135deg,rgba(255,184,0,.1),rgba(255,184,0,.04));border:1px solid rgba(255,184,0,.2);display:flex;align-items:center;justify-content:space-between;}
+.missions-bonus-text{font-size:12px;color:var(--sub);}
+.missions-bonus-reward{font-family:var(--f-display);font-size:16px;font-weight:900;color:var(--gold2);}
+.missions-all-done{text-align:center;padding:8px;font-family:var(--f-display);font-size:16px;font-weight:800;color:var(--g);}
+
+.daily{margin:8px 14px 6px;background:linear-gradient(135deg,rgba(0,229,160,.07),rgba(14,165,233,.04));border:1px solid rgba(0,229,160,.18);border-radius:14px;padding:11px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:.15s;position:relative;overflow:hidden;}
+.daily::after{content:'';position:absolute;right:-10px;top:-10px;width:70px;height:70px;background:radial-gradient(circle,rgba(0,229,160,.12),transparent 70%);border-radius:50%;}
+.daily:active{transform:scale(.98);}
+.d-ico{font-size:26px;animation:bob .9s ease-in-out infinite alternate;}
+.d-t{flex:1;}
+.d-title{font-size:13px;font-weight:700;color:var(--g);}
+.d-sub{font-size:10px;color:var(--sub);margin-top:1px;}
+.d-btn{background:var(--g);border-radius:9px;padding:6px 12px;font-size:11px;font-weight:800;color:#03120a;font-family:'Barlow Condensed',sans-serif;box-shadow:0 0 14px rgba(0,229,160,.3);flex-shrink:0;}
+
+.stats{display:flex;gap:7px;padding:6px 14px 10px;}
+.sbox{flex:1;background:var(--card);border:1px solid var(--b2);border-radius:12px;padding:9px 8px;text-align:center;}
+.sv2{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;line-height:1;}
+.sv2.g{color:var(--g);}
+.sv2.gold{color:var(--gold);}
+.sv2.b{color:var(--blue);}
+.sv2.r{color:var(--r);}
+.sl{font-size:9px;color:var(--sub);margin-top:3px;text-transform:uppercase;letter-spacing:.5px;}
+
+.rtabs{display:flex;gap:6px;padding:0 14px 10px;overflow-x:auto;scrollbar-width:none;}
+.rtabs::-webkit-scrollbar{display:none;}
+.rtab{flex-shrink:0;padding:6px 12px;border-radius:9px;background:var(--card);border:1px solid var(--b2);font-size:12px;font-weight:600;color:var(--sub);cursor:pointer;transition:.15s;display:flex;align-items:center;gap:4px;white-space:nowrap;}
+.rtab.active{background:rgba(0,229,160,.1);border-color:rgba(0,229,160,.3);color:var(--g);}
+.rcnt{background:rgba(0,229,160,.15);border-radius:5px;padding:1px 5px;font-size:9px;font-weight:800;color:var(--g);}
+
+.shdr{display:flex;align-items:center;justify-content:space-between;padding:0 14px 8px;}
+.stitle{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:var(--sub);letter-spacing:1px;text-transform:uppercase;}
+.slink{font-size:11px;color:var(--g);cursor:pointer;font-weight:600;}
+
+.feed-list{padding:0 14px;display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
+.fi{background:var(--card);border:1px solid var(--b2);border-radius:12px;padding:10px 13px;display:flex;align-items:center;gap:10px;}
+.fi-av{font-size:20px;}
+.fi-tx{flex:1;font-size:12px;color:var(--sub);line-height:1.4;}
+.fi-tx b{color:var(--text);}
+.fi-pt{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;}
+.win{color:var(--g);}
+.lose{color:var(--r);}
+
+/* HOME MARKET CARDS */
+.pcards{padding:0 14px;display:flex;flex-direction:column;gap:10px;}
+.pcard{
+  background:var(--card);
+  backdrop-filter:var(--blur);
+  -webkit-backdrop-filter:var(--blur);
+  border:1px solid var(--b2);
+  border-radius:16px;
+  overflow:hidden;
+  position:relative;
+  transition:.15s;
+}
+.pcard:active{transform:scale(.99);}
+.ptag{position:absolute;top:10px;right:10px;font-size:9px;font-weight:800;padding:2px 7px;border-radius:5px;letter-spacing:.5px;}
+.t-fl{background:rgba(255,184,0,.12);color:var(--gold);border:1px solid rgba(255,184,0,.25);}
+.t-me{background:rgba(139,92,246,.12);color:#a78bfa;border:1px solid rgba(139,92,246,.25);}
+.t-ho{background:rgba(255,48,87,.1);color:#ff6080;border:1px solid rgba(255,48,87,.2);}
+.t-ne{background:rgba(0,229,160,.1);color:var(--g);border:1px solid rgba(0,229,160,.2);}
+.pcb{padding:12px 14px 10px;}
+.pcm{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
+.pcc{width:32px;height:32px;border-radius:9px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;border:1px solid var(--b2);}
+.pcq{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--text);line-height:1.25;padding-right:52px;}
+.pcs{font-size:11px;color:var(--sub);line-height:1.4;margin-bottom:10px;}
+.yn{display:flex;gap:7px;padding:0 14px 10px;}
+.yb{flex:1;padding:11px 8px;border-radius:12px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;letter-spacing:.5px;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:1px;}
+.yb:active{transform:scale(.95);}
+.yes-b{background:linear-gradient(135deg,#005533,#009960);color:#fff;box-shadow:0 3px 14px rgba(0,200,100,.3);}
+.no-b{background:linear-gradient(135deg,#770020,#bb1a36);color:#fff;box-shadow:0 3px 14px rgba(255,30,70,.3);}
+.yb.vy{background:var(--g);color:#03120a;}
+.yb.vn{background:var(--r);color:#fff;}
+.ys{font-size:9px;opacity:.8;font-weight:600;letter-spacing:0;}
+.timer-row2{display:flex;align-items:center;justify-content:space-between;padding:0 14px 11px;}
+.tv{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:var(--sub);}
+.ch{font-size:11px;font-weight:700;color:var(--purple);cursor:pointer;}
+.vo{position:absolute;inset:0;background:rgba(6,10,18,.75);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;font-size:28px;border-radius:16px;z-index:5;}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ШЛЯХ ПРОВІСНИКА
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.path-screen{
+  flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;position:relative;
+  background:linear-gradient(180deg,#0a0e1a 0%,#060a12 100%);
+}
+.path-screen::-webkit-scrollbar{display:none;}
+
+/* Хедер з прогресом */
+.path-header{
+  padding:14px 16px 10px;
+  display:flex;flex-direction:column;gap:8px;
+  background:linear-gradient(180deg,rgba(6,10,18,.98),transparent);
+  position:sticky;top:0;z-index:10;
+}
+.path-header-top{
+  display:flex;align-items:center;justify-content:space-between;
+}
+.path-day-label{
+  font-family:var(--f-display);font-size:13px;font-weight:800;
+  color:var(--sub);letter-spacing:1px;text-transform:uppercase;
+}
+.path-step-label{
+  font-family:var(--f-display);font-size:22px;font-weight:900;color:var(--text);
+}
+.path-step-label span{color:var(--purple);}
+.path-gems-today{
+  font-family:var(--f-display);font-size:16px;font-weight:800;color:var(--gold2);
+}
+.path-progress-bar{
+  height:6px;border-radius:3px;
+  background:rgba(139,92,246,.15);overflow:hidden;
+}
+.path-progress-fill{
+  height:100%;border-radius:3px;
+  background:linear-gradient(to right,#7c3aed,#a78bfa);
+  transition:width .5s var(--ease);
+}
+
+/* Контейнер сходинок */
+.path-steps{
+  padding:16px 20px 80px;
+  display:flex;flex-direction:column;
+  align-items:center;gap:0;
+  position:relative;
+}
+
+/* Вертикальна лінія */
+.path-steps::before{
+  content:'';
+  position:absolute;
+  left:50%;transform:translateX(-50%);
+  top:0;bottom:80px;
+  width:3px;
+  background:linear-gradient(to bottom,
+    rgba(139,92,246,.6) 0%,
+    rgba(139,92,246,.1) 100%
+  );
+  z-index:0;
+}
+
+/* Одна сходинка */
+.path-step{
+  position:relative;z-index:1;
+  display:flex;align-items:center;
+  width:100%;margin-bottom:4px;
+}
+/* Чергуємо ліво/право */
+.path-step:nth-child(odd) { justify-content:flex-end;padding-right:calc(50% + 24px); }
+.path-step:nth-child(even){ justify-content:flex-start;padding-left:calc(50% + 24px); }
+
+/* Коло сходинки */
+.step-circle{
+  width:52px;height:52px;
+  border-radius:14px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;
+  cursor:pointer;
+  transition:all .2s var(--ease);
+  position:relative;
+  flex-shrink:0;
+}
+.step-circle:active{transform:scale(.93);}
+
+/* Стани */
+.step-done{
+  background:linear-gradient(135deg,#005533,#00a060);
+  border:2px solid var(--g);
+  box-shadow:0 0 16px rgba(0,229,160,.4);
+  color:#fff;
+}
+.step-current{
+  background:linear-gradient(135deg,#4c1d95,#7c3aed);
+  border:2px solid #a78bfa;
+  box-shadow:0 0 20px rgba(139,92,246,.6);
+  color:#fff;
+  animation:stepPulse 1.5s ease-in-out infinite;
+}
+@keyframes stepPulse{
+  0%,100%{box-shadow:0 0 20px rgba(139,92,246,.6);}
+  50%{box-shadow:0 0 35px rgba(139,92,246,.9),0 0 60px rgba(139,92,246,.3);}
+}
+.step-locked{
+  background:rgba(255,255,255,.04);
+  border:2px solid rgba(255,255,255,.08);
+  color:var(--sub);cursor:default;
+}
+
+/* Спецклітинки */
+.step-flash{border-color:var(--gold)!important;box-shadow:0 0 16px rgba(255,184,0,.4)!important;}
+.step-treasure{border-color:#ec4899!important;box-shadow:0 0 16px rgba(236,72,153,.4)!important;}
+.step-shield{border-color:var(--blue)!important;box-shadow:0 0 16px rgba(14,165,233,.4)!important;}
+.step-bonus{border-color:var(--r)!important;box-shadow:0 0 16px rgba(255,48,87,.4)!important;}
+
+.step-num{
+  font-family:var(--f-display);font-size:18px;font-weight:900;line-height:1;
+}
+.step-reward{
+  font-family:var(--f-display);font-size:9px;font-weight:700;
+  opacity:.85;margin-top:1px;
+}
+.step-special-icon{
+  position:absolute;top:-6px;right:-6px;
+  width:18px;height:18px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;
+  background:var(--bg);
+  border:1px solid rgba(255,255,255,.2);
+}
+
+/* Коннектор між кроками */
+.step-connector{
+  width:3px;height:20px;
+  margin:0 auto;
+  border-radius:2px;
+  background:rgba(139,92,246,.3);
+}
+.step-connector.done-line{
+  background:linear-gradient(to bottom,var(--g),rgba(0,229,160,.3));
+}
+
+/* Фінальний крок */
+.step-final{
+  background:linear-gradient(135deg,#92400e,#d97706,#fbbf24);
+  border:2px solid var(--gold2);
+  box-shadow:0 0 30px rgba(255,184,0,.5);
+  width:68px!important;height:68px!important;
+  border-radius:20px!important;
+}
+.step-final .step-num{font-size:22px;}
+
+/* Кнопка "Зробити прогноз" */
+.path-action-btn{
+  position:fixed;bottom:70px;left:50%;transform:translateX(-50%);
+  width:calc(100% - 32px);max-width:398px;
+  padding:15px;border-radius:var(--r-btn);border:none;cursor:pointer;
+  background:linear-gradient(135deg,#4c1d95,#7c3aed);
+  color:#fff;font-family:var(--f-display);font-size:18px;font-weight:900;
+  letter-spacing:.5px;
+  box-shadow:0 4px 24px rgba(139,92,246,.5);
+  transition:all var(--dur-fast);
+  z-index:20;display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.path-action-btn:active{transform:translateX(-50%) scale(.97);}
+.path-action-btn.completed{
+  background:linear-gradient(135deg,#005533,#009960);
+  box-shadow:var(--glow-g);
+}
+
+/* Модалка вибору ринку */
+.path-modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);
+  backdrop-filter:blur(4px);z-index:200;
+  display:flex;align-items:flex-end;justify-content:center;
+}
+.path-modal{
+  width:100%;max-width:430px;
+  background:var(--card);
+  border-radius:20px 20px 0 0;
+  border:1px solid rgba(139,92,246,.3);
+  padding:20px 16px 32px;
+  max-height:80vh;overflow-y:auto;
+}
+.path-modal-title{
+  font-family:var(--f-display);font-size:20px;font-weight:900;
+  color:#a78bfa;margin-bottom:4px;
+}
+.path-modal-sub{font-size:12px;color:var(--sub);margin-bottom:14px;}
+.path-market-item{
+  background:rgba(255,255,255,.04);border:1px solid var(--b2);
+  border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer;
+  transition:all var(--dur-fast);
+}
+.path-market-item:active{transform:scale(.98);background:rgba(139,92,246,.1);border-color:rgba(139,92,246,.3);}
+.path-market-q{font-family:var(--f-display);font-size:16px;font-weight:800;margin-bottom:6px;}
+.path-market-meta{font-size:11px;color:var(--sub);}
+.path-market-btns{display:flex;gap:8px;margin-top:10px;}
+.path-yes-btn{
+  flex:1;padding:10px;border-radius:10px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,#005533,#009960);
+  color:#fff;font-family:var(--f-display);font-size:16px;font-weight:900;
+}
+.path-no-btn{
+  flex:1;padding:10px;border-radius:10px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,#770020,#bb1a36);
+  color:#fff;font-family:var(--f-display);font-size:16px;font-weight:900;
+}
+
+/* Кнопка "Кинути виклик" під ставкою */
+.challenge-btn{
+  width:100%;margin-top:8px;padding:12px;
+  border:none;border-radius:var(--r-btn);cursor:pointer;
+  background:linear-gradient(135deg,rgba(139,92,246,.25),rgba(139,92,246,.1));
+  border:1px solid rgba(139,92,246,.4);
+  color:#a78bfa;
+  font-family:var(--f-display);font-size:16px;font-weight:800;
+  letter-spacing:.5px;
+  transition:all var(--dur-fast) var(--ease);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.challenge-btn:active{transform:scale(.97);}
+.challenge-btn:hover{background:linear-gradient(135deg,rgba(139,92,246,.4),rgba(139,92,246,.2));}
+
+/* ── Екран виклику від друга ── */
+.challenge-screen{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:24px;gap:16px;
+  flex:1;text-align:center;
+}
+.ch-from{
+  font-size:13px;color:var(--sub);font-weight:600;
+}
+.ch-avatar{
+  width:72px;height:72px;border-radius:50%;
+  background:linear-gradient(135deg,rgba(139,92,246,.3),rgba(139,92,246,.1));
+  border:2px solid rgba(139,92,246,.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:34px;
+  box-shadow:0 0 24px rgba(139,92,246,.3);
+}
+.ch-title{
+  font-family:var(--f-display);font-size:14px;font-weight:800;
+  color:var(--purple);letter-spacing:1px;text-transform:uppercase;
+}
+.ch-question{
+  font-family:var(--f-display);font-size:26px;font-weight:900;
+  color:var(--text);line-height:1.2;
+}
+.ch-bet-info{
+  background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.25);
+  border-radius:12px;padding:12px 20px;
+  font-size:13px;color:var(--sub);
+}
+.ch-bet-info b{color:var(--purple);}
+.ch-actions{display:flex;gap:10px;width:100%;}
+.ch-accept{
+  flex:1;padding:16px;border-radius:var(--r-btn);border:none;cursor:pointer;
+  background:linear-gradient(135deg,#005533,#009960);
+  color:#fff;font-family:var(--f-display);font-size:20px;font-weight:900;
+  box-shadow:var(--glow-g);transition:transform var(--dur-fast);
+}
+.ch-decline{
+  flex:1;padding:16px;border-radius:var(--r-btn);border:none;cursor:pointer;
+  background:rgba(255,255,255,.06);border:1px solid var(--b2);
+  color:var(--sub);font-family:var(--f-display);font-size:20px;font-weight:800;
+  transition:transform var(--dur-fast);
+}
+.ch-accept:active,.ch-decline:active{transform:scale(.96);}
+
+/* ── Екран активної дуелі ── */
+.duel-header{
+  padding:20px 16px 12px;text-align:center;
+}
+.duel-title{
+  font-family:var(--f-display);font-size:14px;font-weight:800;
+  color:var(--purple);letter-spacing:1px;margin-bottom:12px;
+}
+.duel-vs{
+  display:flex;align-items:center;gap:12px;justify-content:center;
+}
+.duel-player{
+  display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;
+}
+.duel-av{
+  width:56px;height:56px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:26px;
+  border:2px solid var(--b2);
+}
+.duel-av.yes-player{border-color:rgba(0,229,160,.4);box-shadow:0 0 16px rgba(0,229,160,.2);}
+.duel-av.no-player{border-color:rgba(255,48,87,.4);box-shadow:0 0 16px rgba(255,48,87,.2);}
+.duel-name{font-size:12px;font-weight:700;}
+.duel-side-yes{font-family:var(--f-display);font-size:15px;font-weight:900;color:var(--g);}
+.duel-side-no{font-family:var(--f-display);font-size:15px;font-weight:900;color:var(--r);}
+.duel-amount{font-size:11px;color:var(--sub);}
+.vs-badge{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,rgba(139,92,246,.3),rgba(139,92,246,.1));
+  border:1px solid rgba(139,92,246,.4);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--f-display);font-size:14px;font-weight:900;color:#a78bfa;
+  flex-shrink:0;
+}
+.duel-question-box{
+  margin:12px 16px;
+  background:var(--card);backdrop-filter:var(--blur);
+  border:1px solid var(--b2);border-radius:14px;padding:14px;text-align:center;
+}
+.duel-q{font-family:var(--f-display);font-size:20px;font-weight:900;margin-bottom:6px;}
+.duel-pool{font-size:12px;color:var(--sub);}
+.duel-pool b{color:var(--gold2);}
+.duel-timer{
+  margin:0 16px 12px;
+  background:rgba(255,184,0,.08);border:1px solid rgba(255,184,0,.2);
+  border-radius:10px;padding:10px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.duel-timer-label{font-size:11px;color:var(--sub);}
+.duel-timer-val{font-family:var(--f-display);font-size:16px;font-weight:800;color:var(--gold2);}
+.duel-resolve-btn{
+  margin:0 16px;width:calc(100% - 32px);
+  padding:14px;border-radius:var(--r-btn);border:none;cursor:pointer;
+  background:linear-gradient(135deg,rgba(139,92,246,.3),rgba(139,92,246,.15));
+  border:1px solid rgba(139,92,246,.4);
+  color:#a78bfa;font-family:var(--f-display);font-size:17px;font-weight:900;
+  transition:all var(--dur-fast);
+}
+.duel-resolve-btn:active{transform:scale(.97);}
+
+/* ── Список батлів ── */
+.battles-list{padding:0 14px;display:flex;flex-direction:column;gap:8px;}
+.battle-card{
+  background:var(--card);backdrop-filter:var(--blur);
+  border:1px solid var(--b2);border-radius:14px;padding:13px;
+  cursor:pointer;transition:all var(--dur-fast);
+  display:flex;flex-direction:column;gap:8px;
+}
+.battle-card:active{transform:scale(.99);}
+.battle-card.pending{border-color:rgba(139,92,246,.3);}
+.battle-card.active-duel{border-color:rgba(0,229,160,.25);}
+.battle-top{display:flex;align-items:center;justify-content:space-between;}
+.battle-players{font-family:var(--f-display);font-size:15px;font-weight:800;}
+.battle-status{font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;}
+.bs-pending{background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3);}
+.bs-active{background:rgba(0,229,160,.1);color:var(--g);border:1px solid rgba(0,229,160,.2);}
+.bs-done{background:rgba(255,255,255,.05);color:var(--sub);border:1px solid var(--b2);}
+.battle-q{font-size:12px;color:var(--sub);line-height:1.4;}
+.battle-bottom{display:flex;align-items:center;justify-content:space-between;}
+.battle-sides{display:flex;gap:8px;font-size:11px;font-weight:700;}
+.battle-yes{color:var(--g);}
+.battle-no{color:var(--r);}
+.battle-pot{font-size:11px;color:var(--gold2);font-weight:700;}
+
+/* Вкладки Markets: Ринки | ⚔️ Батли */
+.markets-tabs{
+  display:flex;padding:8px 14px 0;gap:6px;flex-shrink:0;
+}
+.markets-tab{
+  flex:1;padding:9px;text-align:center;
+  font-family:var(--f-display);font-size:14px;font-weight:800;
+  border-radius:10px;cursor:pointer;border:1px solid var(--b2);
+  color:var(--sub);background:transparent;
+  transition:all var(--dur-fast);letter-spacing:.3px;
+}
+.markets-tab.active{
+  background:rgba(0,229,160,.1);border-color:rgba(0,229,160,.3);color:var(--g);
+}
+.lb-tabs{display:flex;padding:0 14px 12px;gap:0;}
+.lb-tab{flex:1;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;border:1px solid var(--b2);color:var(--sub);transition:.15s;}
+.lb-tab:first-child{border-radius:10px 0 0 10px;}
+.lb-tab:last-child{border-radius:0 10px 10px 0;}
+.lb-tab.active{background:rgba(0,229,160,.1);border-color:rgba(0,229,160,.3);color:var(--g);}
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:6px;padding:0 14px 18px;}
+.pod{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.pod-av{border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--b2);position:relative;}
+.pod-av.p1{width:62px;height:62px;font-size:28px;border-color:var(--gold2);box-shadow:0 0 20px rgba(255,184,0,.35);}
+.pod-av.p2{width:50px;height:50px;font-size:22px;}
+.pod-av.p3{width:50px;height:50px;font-size:22px;}
+.pod-crown{position:absolute;top:-14px;font-size:18px;}
+.pod-n{font-size:11px;font-weight:700;}
+.pod-p{font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--gold2);}
+.pod-base{border-radius:10px 10px 0 0;width:74px;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;padding-top:8px;}
+.pb1{height:64px;background:linear-gradient(to top,rgba(255,184,0,.18),rgba(255,184,0,.02));color:var(--gold2);border:1px solid rgba(255,184,0,.2);}
+.pb2{height:48px;background:linear-gradient(to top,rgba(148,163,184,.12),transparent);color:#94a3b8;border:1px solid rgba(148,163,184,.1);}
+.pb3{height:38px;background:linear-gradient(to top,rgba(217,119,6,.12),transparent);color:#d97706;border:1px solid rgba(217,119,6,.1);}
+.lb-list{padding:0 14px;display:flex;flex-direction:column;gap:7px;}
+.lb-row{background:var(--card);border:1px solid var(--b2);border-radius:13px;padding:11px 13px;display:flex;align-items:center;gap:11px;}
+.lb-row.me{border-color:rgba(0,229,160,.3);background:rgba(0,229,160,.05);}
+.lb-rk{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:var(--sub);width:22px;}
+.lb-av{font-size:22px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;}
+.lb-in{flex:1;}
+.lb-nm{font-size:13px;font-weight:700;}
+.lb-mt{font-size:10px;color:var(--sub);margin-top:2px;}
+.lb-pt{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:var(--gold2);}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PROFILE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.ph{padding:16px 14px 12px;display:flex;flex-direction:column;align-items:center;gap:7px;}
+.pav{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,rgba(0,229,160,.2),rgba(14,165,233,.1));display:flex;align-items:center;justify-content:center;font-size:34px;border:2px solid rgba(0,229,160,.25);box-shadow:0 0 24px rgba(0,229,160,.15);}
+.pnm{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;}
+.plv{background:linear-gradient(135deg,rgba(0,229,160,.12),rgba(14,165,233,.08));border:1px solid rgba(0,229,160,.22);border-radius:20px;padding:5px 16px;font-size:12px;font-weight:700;color:var(--g);}
+.pxp{width:calc(100% - 28px);background:rgba(255,255,255,.05);border-radius:20px;height:5px;overflow:hidden;margin-top:3px;}
+.pxpf{height:100%;background:linear-gradient(to right,var(--g2),var(--g));border-radius:20px;width:63%;}
+.pxt{font-size:10px;color:var(--sub);margin-top:2px;}
+
+.wr{position:relative;width:76px;height:76px;flex-shrink:0;}
+.wr svg{width:76px;height:76px;transform:rotate(-90deg);}
+.wr-bg{fill:none;stroke:rgba(255,255,255,.07);stroke-width:7;}
+.wr-f{fill:none;stroke:var(--g);stroke-width:7;stroke-linecap:round;stroke-dasharray:209;stroke-dashoffset:77;}
+.wr-n{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.wr-pct{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:900;color:var(--g);line-height:1;}
+.wr-l{font-size:8px;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;}
+
+.psr{display:flex;gap:7px;padding:0 14px 12px;}
+.sk-card{margin:0 14px 12px;background:var(--card);border:1px solid var(--b2);border-radius:14px;padding:12px;display:flex;align-items:center;gap:12px;}
+.sk-f{font-size:28px;animation:bob .9s ease-in-out infinite alternate;}
+.sk-i{flex:1;}
+.sk-v{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:var(--gold2);}
+.sk-s{font-size:10px;color:var(--sub);margin-top:1px;}
+.sk-d{display:flex;gap:4px;margin-top:7px;}
+.sd{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.07);}
+.sd.on{background:var(--gold2);box-shadow:0 0 6px rgba(255,208,96,.6);}
+.sd.cur{background:transparent;border:2px solid var(--gold2);animation:sdp 1s infinite;}
+@keyframes sdp{0%,100%{box-shadow:0 0 0 0 rgba(255,208,96,.4)}50%{box-shadow:0 0 0 3px rgba(255,208,96,0)}}
+
+.bg-sect{padding:0 14px 12px;}
+.bg-t{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:var(--sub);letter-spacing:1px;text-transform:uppercase;margin-bottom:9px;}
+.bg-grid{display:flex;gap:7px;flex-wrap:wrap;}
+.bg{background:var(--card);border:1px solid var(--b2);border-radius:11px;padding:8px 11px;display:flex;align-items:center;gap:6px;}
+.bg-i{font-size:20px;}
+.bg-n{font-size:11px;font-weight:700;}
+.bg-d{font-size:9px;color:var(--sub);margin-top:1px;}
+.bg.locked{opacity:.3;}
+
+.shop{margin:0 14px 12px;background:linear-gradient(135deg,rgba(255,184,0,.06),rgba(255,184,0,.02));border:1px solid rgba(255,184,0,.15);border-radius:16px;padding:14px;}
+.shop-t{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--gold2);margin-bottom:3px;}
+.shop-s{font-size:11px;color:var(--sub);margin-bottom:12px;line-height:1.5;}
+.shop-it{display:flex;flex-direction:column;gap:7px;}
+.si{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:11px;padding:10px 12px;cursor:pointer;transition:.15s;}
+.si:active{transform:scale(.98);}
+.si-i{font-size:22px;width:34px;text-align:center;}
+.si-in{flex:1;}
+.si-n{font-size:13px;font-weight:700;}
+.si-d{font-size:10px;color:var(--sub);margin-top:1px;}
+.si-p{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--gold2);}
+
+.ref{margin:0 14px 14px;background:rgba(0,229,160,.05);border:1px solid rgba(0,229,160,.15);border-radius:16px;padding:14px;}
+.ref-t{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--g);margin-bottom:3px;}
+.ref-s{font-size:11px;color:var(--sub);margin-bottom:11px;line-height:1.6;}
+.ref-l{background:var(--bg);border:1px solid var(--b2);border-radius:9px;padding:8px 12px;font-size:11px;color:var(--blue);font-family:'Barlow Condensed',sans-serif;margin-bottom:9px;}
+.ref-st{display:flex;gap:7px;}
+.rs{flex:1;background:var(--card);border:1px solid var(--b2);border-radius:10px;padding:9px;text-align:center;}
+.rs-n{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;color:var(--g);}
+.rs-l{font-size:9px;color:var(--sub);margin-top:2px;text-transform:uppercase;letter-spacing:.5px;}
+
+.air{margin:0 14px 14px;background:linear-gradient(135deg,rgba(255,184,0,.07),rgba(255,184,0,.02));border:1px solid rgba(255,184,0,.18);border-radius:16px;padding:14px;}
+.air-t{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--gold2);margin-bottom:3px;}
+.air-s{font-size:11px;color:var(--sub);margin-bottom:10px;line-height:1.6;}
+.air-b{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:var(--gold2);margin-bottom:10px;}
+.air-btn{background:var(--g);border-radius:11px;padding:11px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;color:#03120a;cursor:pointer;box-shadow:0 0 20px rgba(0,229,160,.3);}
+
+/* MARKETS FILTER */
+.mf{display:flex;gap:6px;padding:0 14px 12px;overflow-x:auto;scrollbar-width:none;}
+.mf::-webkit-scrollbar{display:none;}
+.mft{flex-shrink:0;padding:7px 14px;border-radius:9px;background:var(--card);border:1px solid var(--b2);font-size:12px;font-weight:600;color:var(--sub);cursor:pointer;transition:.15s;}
+.mft.active{background:rgba(0,229,160,.1);border-color:rgba(0,229,160,.3);color:var(--g);}
+
+/* ── Fallback для старих браузерів без backdrop-filter ── */
+@supports not (backdrop-filter: blur(1px)) {
+  .tb, .bnav, .sb-cat, .sb-timer, .card-type-tag,
+  .pcard, .bet-pending, .duel-question-box {
+    background-color: rgba(6,10,18,.97) !important;
+  }
+}
+</style>
+</head>
+<body>
+<noscript>
+  <div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#060a12;color:#e2f0ff;font-family:sans-serif;text-align:center;padding:24px;z-index:9999;">
+    <div>
+      <div style="font-size:48px;margin-bottom:16px;">🔮</div>
+      <div style="font-size:20px;font-weight:700;margin-bottom:8px;">OracleX потребує JavaScript</div>
+      <div style="font-size:14px;color:#4a6a8e;">Увімкніть JavaScript в налаштуваннях браузера</div>
+    </div>
+  </div>
+</noscript>
+
+<!-- ══════ FEED (TIKTOK) ══════ -->
+<div class="screen active" id="s-feed">
+  <div class="tb">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;background:linear-gradient(135deg,var(--g),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.5px;">OracleX</div>
+    <div style="flex:1;text-align:center;" class="streak-chip">🔥 <span id="sc1">5</span></div>
+    <div class="bal-pill"><span class="bal-n" id="b1">12,500</span> 💎</div>
+  </div>
+
+  <!-- ВКЛАДКИ СТРІЧКИ -->
+  <div class="feed-tabs">
+    <div class="feed-tab active" id="ftab-new"    onclick="switchFeedTab('new')">🆕 Нові</div>
+    <div class="feed-tab"        id="ftab-active" onclick="switchFeedTab('active')">🔥 Активні</div>
+    <div class="feed-tab"        id="ftab-history" onclick="switchFeedTab('history')">📜 Історія</div>
+  </div>
+
+  <!-- Основна стрічка (нові / активні) -->
+  <div id="feed-scroll"></div>
+
+  <!-- Вкладка Історія -->
+  <div id="feed-history" style="display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+    <div id="history-content" style="padding:12px 14px;display:flex;flex-direction:column;gap:10px;"></div>
+    <div class="bpad"></div>
+  </div>
+
+  <nav class="bnav">
+    <div class="ni" onclick="go('home')"><div class="ni-ic">🏠</div><div class="ni-lb">Головна</div></div>
+    <div class="ni active" onclick="go('feed')"><div class="ni-ic">⚡</div><div class="ni-lb">Стрічка</div></div>
+    <div class="ni-create" onclick="go('create')"><div class="ni-create-circle">＋</div><div class="ni-create-lb">Створити</div></div>
+    <div class="ni" onclick="go('markets')"><div class="ni-ic">📊</div><div class="ni-lb">Ринки</div></div>
+    <div class="ni" onclick="go('profile')"><div class="ni-ic">👤</div><div class="ni-lb">Профіль</div></div>
+  </nav>
+</div>
+
+<!-- ══════ HOME ══════ -->
+<div class="screen" id="s-home">
+  <div class="tb">
+    <div class="av">👤<div class="dot"></div></div>
+    <div class="tb-mid"><div class="tb-name">@siry_kardynal</div><div class="tb-sub"><span class="lvl">UR.5</span> Провісник</div></div>
+    <div class="streak-chip">🔥 <span id="sc2">5</span></div>
+    <div class="bal-pill"><span class="bal-n" id="b2">12,500</span> 💎</div>
+  </div>
+  <div class="sc">
+    <div class="daily" onclick="claimDaily()">
+      <div class="d-ico">🎁</div>
+      <div class="d-t"><div class="d-title">Щоденна нагорода!</div><div class="d-sub">День 5 → +250 💎 · Серія горить!</div></div>
+      <div class="d-btn">Забрати</div>
+    </div>
+
+    <!-- МІСІЇ ДНЯ -->
+    <div class="missions" id="missions-block"></div>
+
+    <!-- ШЛЯХ ПРОВІСНИКА — кнопка входу -->
+    <div onclick="go('path')" style="margin:0 14px 12px;background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(139,92,246,.05));border:1px solid rgba(139,92,246,.3);border-radius:16px;padding:14px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:all .15s;">
+      <div style="font-size:32px;">🗺️</div>
+      <div style="flex:1;">
+        <div style="font-family:var(--f-display);font-size:17px;font-weight:800;color:#a78bfa;">Шлях Провісника</div>
+        <div style="font-size:11px;color:var(--sub);margin-top:2px;" id="path-home-status">Щоденний виклик · 20 сходинок</div>
+      </div>
+      <div style="font-family:var(--f-display);font-size:14px;font-weight:800;color:var(--gold2);" id="path-home-reward">до 3,500 💎</div>
+    </div>
+
+    <div class="stats">
+      <div class="sbox"><div class="sv2 g">71%</div><div class="sl">Win Rate</div></div>
+      <div class="sbox"><div class="sv2 gold">#47</div><div class="sl">Рейтинг</div></div>
+      <div class="sbox"><div class="sv2 b" id="h-games">124</div><div class="sl">Ігор</div></div>
+      <div class="sbox"><div class="sv2 r">🔥5</div><div class="sl">Серія</div></div>
+    </div>
+    <div class="rtabs" id="rtabs">
+      <div class="rtab active" onclick="setRoom('ua',this)">🇺🇦 Україна <span class="rcnt">3</span></div>
+      <div class="rtab" onclick="setRoom('global',this)">🌍 Глобальний <span class="rcnt">5</span></div>
+      <div class="rtab" onclick="setRoom('crypto',this)">₿ Крипто <span class="rcnt">4</span></div>
+      <div class="rtab" onclick="setRoom('us',this)">🇺🇸 США <span class="rcnt">2</span></div>
+      <div class="rtab" onclick="setRoom('eu',this)">🇪🇺 EU <span class="rcnt">2</span></div>
+      <div class="rtab" onclick="setRoom('sports',this)">⚽ Спорт <span class="rcnt">3</span></div>
+    </div>
+    <div class="shdr"><div class="stitle">⚡ Активність друзів</div></div>
+    <div class="feed-list">
+      <div class="fi"><div class="fi-av">🐺</div><div class="fi-tx"><b>@wolf_ivan</b> вгадав YES — BTC $100K</div><div class="fi-pt win">+1,200 💎</div></div>
+      <div class="fi"><div class="fi-av">🌺</div><div class="fi-tx"><b>@kvitka_22</b> програв NO — USD/UAH</div><div class="fi-pt lose">–500 💎</div></div>
+      <div class="fi"><div class="fi-av">🦁</div><div class="fi-tx"><b>@lev_ua</b> кинув тобі виклик! ⚔️</div><div class="fi-pt" style="color:var(--purple)">Прийняти</div></div>
+    </div>
+    <div class="shdr"><div class="stitle">📊 Активні ринки</div><div class="slink" onclick="go('markets')">Всі →</div></div>
+    <div class="pcards" id="hcards"></div>
+    <div class="bpad"></div>
+  </div>
+  <nav class="bnav">
+    <div class="ni active" onclick="go('home')"><div class="ni-ic">🏠</div><div class="ni-lb">Головна</div></div>
+    <div class="ni" onclick="go('feed')"><div class="ni-ic">⚡</div><div class="ni-lb">Стрічка</div></div>
+    <div class="ni-create" onclick="go('create')"><div class="ni-create-circle">＋</div><div class="ni-create-lb">Створити</div></div>
+    <div class="ni" onclick="go('markets')"><div class="ni-ic">📊</div><div class="ni-lb">Ринки</div></div>
+    <div class="ni" onclick="go('profile')"><div class="ni-ic">👤</div><div class="ni-lb">Профіль</div></div>
+  </nav>
+</div>
+
+<!-- ══════ MARKETS ══════ -->
+<div class="screen" id="s-markets">
+  <div class="tb">
+    <div class="back-btn" onclick="go('home')">‹</div>
+    <div class="tb-title">РИНКИ</div>
+    <div class="bal-pill" style="padding:4px 10px;"><span class="bal-n" style="font-size:15px;" id="b3">12,500</span> 💎</div>
+  </div>
+  <!-- ВКЛАДКИ: Ринки | Батли -->
+  <div class="markets-tabs">
+    <div class="markets-tab active" id="mtab-markets" onclick="switchMarketsTab('markets')">📊 Ринки</div>
+    <div class="markets-tab" id="mtab-battles" onclick="switchMarketsTab('battles')">⚔️ Батли</div>
+  </div>
+  <!-- Фільтри (тільки для Ринків) -->
+  <div class="mf" id="mfilters">
+    <div class="mft active" onclick="filterM('all',this)">Всі</div>
+    <div class="mft" onclick="filterM('ua',this)">🇺🇦 UA</div>
+    <div class="mft" onclick="filterM('global',this)">🌍 Global</div>
+    <div class="mft" onclick="filterM('crypto',this)">₿ Крипто</div>
+    <div class="mft" onclick="filterM('us',this)">🇺🇸 US</div>
+    <div class="mft" onclick="filterM('eu',this)">🇪🇺 EU</div>
+    <div class="mft" onclick="filterM('sports',this)">⚽ Спорт</div>
+  </div>
+  <div class="sc">
+    <div class="pcards" id="mcards"></div>
+    <div class="battles-list" id="battles-list" style="display:none;"></div>
+    <div class="bpad"></div>
+  </div>
+  <nav class="bnav">
+    <div class="ni" onclick="go('home')"><div class="ni-ic">🏠</div><div class="ni-lb">Головна</div></div>
+    <div class="ni" onclick="go('feed')"><div class="ni-ic">⚡</div><div class="ni-lb">Стрічка</div></div>
+    <div class="ni-create" onclick="go('create')"><div class="ni-create-circle">＋</div><div class="ni-create-lb">Створити</div></div>
+    <div class="ni active" onclick="go('markets')"><div class="ni-ic">📊</div><div class="ni-lb">Ринки</div></div>
+    <div class="ni" onclick="go('profile')"><div class="ni-ic">👤</div><div class="ni-lb">Профіль</div></div>
+  </nav>
+</div>
+
+<!-- ══════ CHALLENGE SCREEN (виклик від друга) ══════ -->
+<div class="screen" id="s-challenge">
+  <div class="tb">
+    <div class="back-btn" onclick="go('feed')">‹</div>
+    <div class="tb-title">⚔️ ВИКЛИК</div>
+    <div style="width:34px;"></div>
+  </div>
+  <div class="challenge-screen" id="challenge-content">
+    <!-- заповнюється JS -->
+  </div>
+  <nav class="bnav">
+    <div class="ni" onclick="go('home')"><div class="ni-ic">🏠</div><div class="ni-lb">Головна</div></div>
+    <div class="ni" onclick="go('feed')"><div class="ni-ic">⚡</div><div class="ni-lb">Стрічка</div></div>
+    <div class="ni-create" onclick="go('create')"><div class="ni-create-circle">＋</div><div class="ni-create-lb">Створити</div></div>
+    <div class="ni" onclick="go('markets')"><div class="ni-ic">📊</div><div class="ni-lb">Ринки</div></div>
+    <div class="ni" onclick="go('profile')"><div class="ni-ic">👤</div><div class="ni-lb">Профіль</div></div>
+  </nav>
+</div>
+
+<!-- ══════ DUEL SCREEN (активна дуель) ══════ -->
+<div class="screen" id="s-duel">
+  <div class="tb">
+    <div class="back-btn" onclick="go('markets')">‹</div>
+    <div class="tb-title">⚔️ ДУЕЛЬ</div>
+    <div style="width:34px;"></div>
+  </div>
+  <div class="sc" id="duel-content">
+    <!-- заповнюється JS -->
+  </div>
+  <nav class="bnav">
+    <div class="ni" onclick="go('home')"><div class="ni-ic">🏠</div><div class="ni-lb">Головна</div></div>
+    <div class="ni" onclick="go('feed')"><div class="ni-ic">⚡</div><div class="ni-lb">Стрічка</div></div>
+    <div class="ni-create" onclick="go('create')"><div class="ni-create-circle">＋</div><div class="ni-create-lb">Створити</div></div>
+    <div class="ni active" onclick="go('markets')"><div class="ni-ic">📊</div><div class="ni-lb">Ринки</div></div>
+    <div class="ni" onclick="go('profile')"><div class="ni-ic">👤</div><div class="ni-lb">Профіль</div></div>
+  </nav>
+</div>
+
+<!-- ══════ LEADERBOARD ══════ -->
+<div class="screen" id="s-leaders">
+  <div class="tb">
+    <div class="back-btn" onclick="go('home')">‹</div>
+    <div class="tb-title">🏆 РЕЙТИНГ</div>
+    <div style="width:34px;"></div>
+  </div>
+  <div class="lb-tabs">
+    <div class="lb-tab active" onclick="setLb(this)">🌍 Глобальний</div>
+    <div class="lb-tab" onclick="setLb(this)">🇺🇦 Україна</div>
+    <div class="lb-tab" onclick="setLb(this)">👥 Друзі</div>
+  </div>
+  <div class="sc">
+    <div class="podium">
+      <div class="pod"><div class="pod-av p2" style="background:#1a2a3a;">🦊</div><div class="pod-n">@fox_ua</div><div class="pod-p">18,200 💎</div><div class="pod-base pb2">2</div></div>
+      <div class="pod"><div class="pod-av p1" style="background:#1e2a10;"><div class="pod-crown">👑</div>🧙‍♂️</div><div class="pod-n">@oracle_pro</div><div class="pod-p">24,500 💎</div><div class="pod-base pb1">1</div></div>
+      <div class="pod"><div class="pod-av p3" style="background:#2a1a0a;">🐯</div><div class="pod-n">@tiger88</div><div class="pod-p">15,100 💎</div><div class="pod-base pb3">3</div></div>
+    </div>
+    <div class="lb-list">
+      <div class="lb-row"><div class="lb-rk">4</div><div class="lb-av">🦅</div><div class="lb-in"><div class="lb-nm">@eagle_eye</div><div class="lb-mt">Win 84% · 210 ігор</div></div><div class="lb-pt">12,300</div></div>
+      <div class="lb-row"><div class="lb-rk">5</div><div class="lb-av">🌙</div><div class="lb-in"><div class="lb-nm">@night_moon</div><div class="lb-mt">Win 79% · 188 ігор</div></div><div class="lb-pt">10,800</div></div>
+      <div class="lb-row"><div class="lb-rk">6</div><div class="lb-av">⚡</div><div class="lb-in"><div class="lb-nm">@flash_k</div><div class="lb-mt">Win 76% · 165 ігор</div></div><div class="lb-pt">9,450</div></div>
+      <div class="lb-row me"><div class="lb-rk" style="color:var(--g)">#47</div><div class="lb-av">😎</div><div class="lb-in"><div class="lb-nm" style="color:var(--g)">@siry_kardynal (ти)</div><div class="lb-mt">Win 71% · <span id="lb-g">124</span> ігор</div></div><div class="lb-pt" id="lb-b">12,500</div></div>
+    </div>
+    <div class="bpad"></div>
+  </div>
+  <nav class="bnav">
+    <div class="ni" onclick="go('home')"><div class="ni-ic">🏠</div><div class="ni-lb">Головна</div></div>
+    <div class="ni" onclick="go('feed')"><div class="ni-ic">⚡</div><div class="ni-lb">Стрічка</div></div>
+    <div class="ni-create" onclick="go('create')"><div class="ni-create-circle">＋</div><div class="ni-create-lb">Створити</div></div>
+    <div class="ni" onclick="go('markets')"><div class="ni-ic">📊</div><div class="ni-lb">Ринки</div></div>
+    <div class="ni" onclick="go('profile')"><div class="ni-ic">👤</div><div class="ni-lb">Профіль</div></div>
+  </nav>
+</div>
+
+<!-- ══════ PROFILE ══════ -->
+<div class="screen" id="s-profile">
+  <div class="tb">
+    <div class="back-btn" onclick="go('home')">‹</div>
+    <div class="tb-title">ПРОФІЛЬ</div>
+    <div style="width:34px;"></div>
+  </div>
+  <div class="sc">
+    <div class="ph">
+      <div class="pav">😎</div>
+      <div class="pnm">@siry_kardynal</div>
+      <div class="plv">⚡ Рівень 5 — Провісник</div>
+      <div class="pxp"><div class="pxpf"></div></div>
+      <div class="pxt">XP: 6,300 / 10,000 до Рівня 6</div>
+    </div>
+    <div class="psr">
+      <div class="wr">
+        <svg viewBox="0 0 76 76"><circle class="wr-bg" cx="38" cy="38" r="33"/><circle class="wr-f" cx="38" cy="38" r="33"/></svg>
+        <div class="wr-n"><div class="wr-pct">71%</div><div class="wr-l">Win Rate</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
+        <div class="sbox" style="text-align:left;display:flex;justify-content:space-between;align-items:center;"><span style="font-size:11px;color:var(--sub);">💎 Баланс</span><span class="sv2 g" style="font-size:17px;" id="pb">12,500</span></div>
+        <div class="sbox" style="text-align:left;display:flex;justify-content:space-between;align-items:center;"><span style="font-size:11px;color:var(--sub);">📊 Ігор</span><span class="sv2 b" style="font-size:17px;" id="pg">124</span></div>
+        <div class="sbox" style="text-align:left;display:flex;justify-content:space-between;align-items:center;"><span style="font-size:11px;color:var(--sub);">🏆 Місце</span><span class="sv2 gold" style="font-size:17px;">#47</span></div>
+      </div>
+    </div>
+    <div class="sk-card">
+      <div class="sk-f">🔥</div>
+      <div class="sk-i">
+        <div class="sk-v">5-денна серія!</div>
+        <div class="sk-s">Заходь щодня — не зупиняй серію</div>
+        <div class="sk-d"><div class="sd on"></div><div class="sd on"></div><div class="sd on"></div><div class="sd on"></div><div class="sd on"></div><div class="sd cur"></div><div class="sd"></div></div>
+      </div>
+    </div>
+    <div class="bg-sect">
+      <div class="bg-t">🏅 Досягнення</div>
+      <div class="bg-grid">
+        <div class="bg"><div class="bg-i">🥇</div><div><div class="bg-n">First Win</div><div class="bg-d">Перша перемога</div></div></div>
+        <div class="bg"><div class="bg-i">🔥</div><div><div class="bg-n">5-Day Streak</div><div class="bg-d">5 днів поспіль</div></div></div>
+        <div class="bg"><div class="bg-i">₿</div><div><div class="bg-n">Crypto Expert</div><div class="bg-d">10 крипто ринків</div></div></div>
+        <div class="bg"><div class="bg-i">🐋</div><div><div class="bg-n">Market Whale</div><div class="bg-d">100 ігор</div></div></div>
+        <div class="bg locked"><div class="bg-i">👑</div><div><div class="bg-n">Top-10 🔒</div><div class="bg-d">Увійди в топ-10</div></div></div>
+        <div class="bg locked"><div class="bg-i">💎</div><div><div class="bg-n">Legend 🔒</div><div class="bg-d">Win rate 85%+</div></div></div>
+      </div>
+    </div>
+    <div class="shop">
+      <div class="shop-t">⭐ Telegram Stars Shop</div>
+      <div class="shop-s">Прискор прогрес — купи бусти. Не гемблінг — завжди безпечно.</div>
+      <div class="shop-it">
+        <div class="si" onclick="toast('⚡ XP Boost x2 — 50 Stars (незабаром)')"><div class="si-i">⚡</div><div class="si-in"><div class="si-n">XP Boost x2</div><div class="si-d">Подвоює XP на 24г</div></div><div class="si-p">50 ⭐</div></div>
+        <div class="si" onclick="toast('💎 Premium Badge — 100 Stars (незабаром)')"><div class="si-i">💎</div><div class="si-in"><div class="si-n">Premium Badge</div><div class="si-d">Ексклюзивний значок</div></div><div class="si-p">100 ⭐</div></div>
+        <div class="si" onclick="toast('🎯 +10 Plays — 30 Stars (незабаром)')"><div class="si-i">🎯</div><div class="si-in"><div class="si-n">+10 Extra Plays</div><div class="si-d">Додаткові ставки</div></div><div class="si-p">30 ⭐</div></div>
+      </div>
+    </div>
+    <div class="ref">
+      <div class="ref-t">🔗 Запроси друзів</div>
+      <div class="ref-s">За кожного друга <b style="color:var(--g)">+500 💎</b> тобі · <b style="color:var(--blue)">+200 💎</b> йому<br>Він грає → ти отримуєш <b style="color:var(--gold)">10% його монет завжди</b></div>
+      <div class="ref-l" id="ref-link">t.me/UAOracleBot?ref=usr_48210</div>
+      <div class="ref-st">
+        <div class="rs"><div class="rs-n">7</div><div class="rs-l">Запрошено</div></div>
+        <div class="rs"><div class="rs-n">3.5K</div><div class="rs-l">Зароблено</div></div>
+        <div class="rs"><div class="rs-n">10%</div><div class="rs-l">Пасивно</div></div>
+      </div>
+    </div>
+    <div class="air">
+      <div class="air-t">💰 SORCL Token AirDrop</div>
+      <div class="air-s">Конвертуй 💎 у токен SORCL · <b style="color:var(--gold2)">Q4 2026</b> лістинг<br>10,000 💎 = 1 SORCL · +20% бонус за рефералів</div>
+      <div class="air-b" id="air-b">12,500 💎 → ~1,250 SORCL</div>
+      <div class="air-btn" onclick="toast('💎 TON гаманець підключено!')">Підключити TON Wallet</div>
+    </div>
+    <div class="bpad"></div>
+  </div>
+  <nav class="bnav">
+    <div class="ni" onclick="go('home')"><div class="ni-ic">🏠</div><div class="ni-lb">Головна</div></div>
+    <div class="ni" onclick="go('feed')"><div class="ni-ic">⚡</div><div class="ni-lb">Стрічка</div></div>
+    <div class="ni-create" onclick="go('create')"><div class="ni-create-circle">＋</div><div class="ni-create-lb">Створити</div></div>
+    <div class="ni" onclick="go('markets')"><div class="ni-ic">📊</div><div class="ni-lb">Ринки</div></div>
+    <div class="ni active" onclick="go('profile')"><div class="ni-ic">👤</div><div class="ni-lb">Профіль</div></div>
+  </nav>
+</div>
+
+<!-- ══════ CREATE MARKET SCREEN ══════ -->
+<div class="screen" id="s-create">
+  <div class="tb">
+    <div class="back-btn" onclick="go('home')">‹</div>
+    <div class="tb-title">✏️ СТВОРИТИ РИНОК</div>
+    <div style="width:34px;"></div>
+  </div>
+  <div class="sc">
+    <div style="padding:12px 14px 0;font-size:12px;color:var(--sub);line-height:1.6;margin-bottom:14px;">
+      Створи своє питання — інші гравці будуть ставити ставки. Якщо ринок стане популярним — отримаєш <b style="color:var(--gold2)">бонусні 💎</b>.
+    </div>
+
+    <!-- ПИТАННЯ -->
+    <div class="cf-section">
+      <div class="cf-label">📝 Питання <span class="cf-req">*</span></div>
+      <div class="cf-hint">Сформулюй чітко. Відповідь має бути однозначною: ТАК або НІ</div>
+      <textarea class="cf-input cf-textarea" id="cf-q" maxlength="120" placeholder="Наприклад: Біткоїн перевищить $120,000 до кінця 2026 року?" oninput="cfUpdate()"></textarea>
+      <div class="cf-counter"><span id="cf-qlen">0</span>/120</div>
+    </div>
+
+    <!-- ОПИС -->
+    <div class="cf-section">
+      <div class="cf-label">📋 Деталі <span style="color:var(--sub);font-size:10px;">(необов'язково)</span></div>
+      <textarea class="cf-input cf-textarea" id="cf-sub" maxlength="200" placeholder="Додаткові умови, джерело результату..." style="height:60px;" oninput="cfUpdate()"></textarea>
+    </div>
+
+    <!-- КАТЕГОРІЯ -->
+    <div class="cf-section">
+      <div class="cf-label">🏷️ Категорія <span class="cf-req">*</span></div>
+      <div class="cf-cats" id="cf-cats">
+        <div class="cf-cat active" data-room="ua"     onclick="cfCat(this)">🇺🇦 Україна</div>
+        <div class="cf-cat"        data-room="global"  onclick="cfCat(this)">🌍 Глобальний</div>
+        <div class="cf-cat"        data-room="crypto"  onclick="cfCat(this)">₿ Крипто</div>
+        <div class="cf-cat"        data-room="us"      onclick="cfCat(this)">🇺🇸 США</div>
+        <div class="cf-cat"        data-room="eu"      onclick="cfCat(this)">🇪🇺 Євросоюз</div>
+        <div class="cf-cat"        data-room="sports"  onclick="cfCat(this)">⚽ Спорт</div>
+      </div>
+    </div>
+
+    <!-- ІКОНКА -->
+    <div class="cf-section">
+      <div class="cf-label">🎨 Іконка</div>
+      <div class="cf-icons">
+        <div class="cf-icon active" onclick="cfIcon(this)">₿</div>
+        <div class="cf-icon" onclick="cfIcon(this)">📈</div>
+        <div class="cf-icon" onclick="cfIcon(this)">⚽</div>
+        <div class="cf-icon" onclick="cfIcon(this)">🏛️</div>
+        <div class="cf-icon" onclick="cfIcon(this)">💵</div>
+        <div class="cf-icon" onclick="cfIcon(this)">🥇</div>
+        <div class="cf-icon" onclick="cfIcon(this)">🤖</div>
+        <div class="cf-icon" onclick="cfIcon(this)">🔥</div>
+        <div class="cf-icon" onclick="cfIcon(this)">🌍</div>
+        <div class="cf-icon" onclick="cfIcon(this)">💊</div>
+        <div class="cf-icon" onclick="cfIcon(this)">🚀</div>
+        <div class="cf-icon" onclick="cfIcon(this)">⚡</div>
+      </div>
+    </div>
+
+    <!-- ДЕДЛАЙН -->
+    <div class="cf-section">
+      <div class="cf-label">⏱️ Дедлайн <span class="cf-req">*</span></div>
+      <div class="cf-deadlines" id="cf-dl">
+        <div class="cf-dl active" data-val="1г 00:00"    onclick="cfDL(this)">1 год</div>
+        <div class="cf-dl"        data-val="24г 00:00"   onclick="cfDL(this)">24 год</div>
+        <div class="cf-dl"        data-val="3д 00:00"    onclick="cfDL(this)">3 дні</div>
+        <div class="cf-dl"        data-val="7д 00:00"    onclick="cfDL(this)">7 днів</div>
+        <div class="cf-dl"        data-val="14д 00:00"   onclick="cfDL(this)">14 днів</div>
+        <div class="cf-dl"        data-val="30д 00:00"   onclick="cfDL(this)">30 днів</div>
+      </div>
+    </div>
+
+    <!-- ПОЧАТКОВИЙ ПУЛ -->
+    <div class="cf-section">
+      <div class="cf-label">💎 Початкова ставка (твоя сторона)</div>
+      <div class="cf-hint">Щоб запустити ринок — постав першу ставку. Інші побачать її і зможуть грати проти тебе.</div>
+      <div class="cf-starter-row">
+        <div class="cf-side-btns">
+          <button class="cf-side cf-yes active" id="cf-yes-btn" onclick="cfSide('yes')">✅ YES</button>
+          <button class="cf-side cf-no"         id="cf-no-btn"  onclick="cfSide('no')">❌ NO</button>
+        </div>
+        <div class="cf-amount-row">
+          <span class="cf-amount-label">Сума:</span>
+          <div class="cf-amounts">
+            <button class="cf-am active" onclick="cfAmount(this,100)">100</button>
+            <button class="cf-am" onclick="cfAmount(this,500)">500</button>
+            <button class="cf-am" onclick="cfAmount(this,1000)">1 000</button>
+            <button class="cf-am" onclick="cfAmount(this,5000)">5 000</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ПРАВИЛА -->
+    <div style="margin:0 14px 14px;background:rgba(255,255,255,.03);border:1px solid var(--b2);border-radius:12px;padding:12px;">
+      <div style="font-size:11px;color:var(--sub);line-height:1.6;">
+        📌 <b style="color:var(--text);">Правила:</b><br>
+        · Питання має мати чітку відповідь YES/NO<br>
+        · Заборонені питання про конкретних приватних осіб<br>
+        · Результат визначається публічними джерелами<br>
+        · Модерація: ринок з'явиться після перевірки (~15 хв)
+      </div>
+    </div>
+
+    <!-- PREVIEW -->
+    <div class="cf-section">
+      <div class="cf-label">👁️ Попередній перегляд</div>
+      <div class="cf-preview" id="cf-preview">
+        <div class="cf-prev-icon" id="cpv-icon">₿</div>
+        <div class="cf-prev-q" id="cpv-q">Твоє питання з'явиться тут...</div>
+        <div class="cf-prev-bar">
+          <div class="cf-prev-yes" id="cpv-yes">✅ YES — твоя ставка</div>
+          <div class="cf-prev-no"  id="cpv-no">❌ NO — чекає гравців</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- КНОПКА ПУБЛІКАЦІЇ -->
+    <div style="padding:0 14px 14px;">
+      <button class="cf-submit" id="cf-submit" onclick="submitMarket()" disabled>
+        ✏️ Опублікувати ринок
+      </button>
+      <div style="font-size:10px;color:var(--sub);text-align:center;margin-top:8px;" id="cf-submit-hint">
+        Заповни питання, категорію та дедлайн
+      </div>
+    </div>
+
+    <div class="bpad"></div>
+  </div>
+  <nav class="bnav">
+    <div class="ni" onclick="go('home')"><div class="ni-ic">🏠</div><div class="ni-lb">Головна</div></div>
+    <div class="ni" onclick="go('feed')"><div class="ni-ic">⚡</div><div class="ni-lb">Стрічка</div></div>
+    <div class="ni-create" onclick="go('create')"><div class="ni-create-circle">＋</div><div class="ni-create-lb">Створити</div></div>
+    <div class="ni" onclick="go('markets')"><div class="ni-ic">📊</div><div class="ni-lb">Ринки</div></div>
+    <div class="ni" onclick="go('profile')"><div class="ni-ic">👤</div><div class="ni-lb">Профіль</div></div>
+  </nav>
+</div>
+
+<!-- ══════ ШЛЯХ ПРОВІСНИКА ══════ -->
+<div class="screen" id="s-path">
+  <div class="tb">
+    <div class="back-btn" onclick="go('home')">‹</div>
+    <div class="tb-title">🗺️ ШЛЯХ ПРОВІСНИКА</div>
+    <div class="bal-pill" style="padding:4px 10px;">
+      <span class="bal-n" style="font-size:15px;" id="path-bal">12,500</span> 💎
+    </div>
+  </div>
+
+  <div class="path-screen" id="path-screen-scroll">
+    <!-- Хедер прогресу -->
+    <div class="path-header">
+      <div class="path-header-top">
+        <div>
+          <div class="path-day-label" id="path-day-label">День 1</div>
+          <div class="path-step-label">Крок <span id="path-current-num">0</span> / 20</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;color:var(--sub);">Зароблено сьогодні</div>
+          <div class="path-gems-today" id="path-gems-today">0 💎</div>
+        </div>
+      </div>
+      <div class="path-progress-bar">
+        <div class="path-progress-fill" id="path-progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Сходинки — генеруються JS -->
+    <div class="path-steps" id="path-steps"></div>
+  </div>
+
+  <!-- Кнопка дії -->
+  <button class="path-action-btn" id="path-action-btn" onclick="openPathModal()">
+    🔮 Зробити прогноз
+  </button>
+
+  <nav class="bnav">
+    <div class="ni" onclick="go('home')"><div class="ni-ic">🏠</div><div class="ni-lb">Головна</div></div>
+    <div class="ni" onclick="go('feed')"><div class="ni-ic">⚡</div><div class="ni-lb">Стрічка</div></div>
+    <div class="ni-create" onclick="go('create')"><div class="ni-create-circle">＋</div><div class="ni-create-lb">Створити</div></div>
+    <div class="ni" onclick="go('markets')"><div class="ni-ic">📊</div><div class="ni-lb">Ринки</div></div>
+    <div class="ni" onclick="go('profile')"><div class="ni-ic">👤</div><div class="ni-lb">Профіль</div></div>
+  </nav>
+</div>
+
+<!-- OVERLAYS -->
+<div class="st" id="st"><div class="st-inner" id="st-m">🔥</div></div>
+
+<script>
+// ════ DATA ════
+// ════════════════════════════════════════════════
+//  PARIMUTUEL ENGINE
+//  Гравці грають ПРОТИ ОДНЕ ОДНОГО.
+//  Застосунок бере 2% комісію з кожного пулу.
+//  Якщо одна сторона порожня — повне повернення.
+// ════════════════════════════════════════════════
+
+// ════ КОНСТАНТИ ПОТОЧНОГО ГРАВЦЯ ════
+// Змінити тут для підключення реального Telegram юзера
+// ════ КОНСТАНТИ ПОТОЧНОГО ГРАВЦЯ ════
+// Змінити тут для підключення реального Telegram юзера
+const MY_USERNAME = '@siry_kardynal';
+const MY_REF_ID   = 'usr_48210';
+const MY_BOT      = 'UAOracleBot';
+
+const FEE = 0.02;           // 2% комісія платформи
+const WIN_THRESHOLD = 0.45; // 55% шанс виграшу (для демо)
+
+// Початкові пули — симулюють вже зроблені ставки інших гравців
+const MARKETS = [
+  {id:0, room:'ua',    q:'ДОЛАР ПО 45?',
+   sub:'Курс USD в Приват24 перевищить 45.00 грн до кінця тижня?',
+   poolYes:13200, poolNo:7100, t:'02:14:45', tp:'flash',
+   bg:'linear-gradient(160deg,#1a3a1a,#0d1f0d)', icon:'💵'},
+
+  {id:1, room:'ua',    q:'ШАХТАР ПЕРЕМОЖЕ?',
+   sub:'Шахтар переможе у наступному матчі Прем\'єр-ліги?',
+   poolYes:5200, poolNo:3800, t:'3д 12:00', tp:'new',
+   bg:'linear-gradient(160deg,#0a1f3a,#061220)', icon:'⚽'},
+
+  {id:2, room:'ua',    q:'НАФТОГАЗ ПІДНІМЕ ЦІНИ?',
+   sub:'Нафтогаз підвищить ціни на газ для населення цього місяця?',
+   poolYes:8400, poolNo:3600, t:'5д 00:00', tp:'hot',
+   bg:'linear-gradient(160deg,#3a1a0a,#1a0800)', icon:'🔥'},
+
+  {id:3, room:'global',q:'BITCOIN $100,000?',
+   sub:'BTC перевищить позначку $100,000 до кінця цього місяця?',
+   poolYes:32000, poolNo:15000, t:'08:30:00', tp:'mega',
+   bg:'linear-gradient(160deg,#1a1000,#5c3d00,#1a1000)', icon:'₿'},
+
+  {id:4, room:'global',q:'FED ЗНИЗИТЬ СТАВКУ?',
+   sub:'Федеральний резерв США знизить ставку на наступному засіданні?',
+   poolYes:9100, poolNo:11200, t:'3д 00:00', tp:'hot',
+   bg:'linear-gradient(160deg,#0a0a2a,#2a1050)', icon:'🏛️'},
+
+  {id:5, room:'global',q:'ЗОЛОТО ПРОБЄ $2,600?',
+   sub:'Ціна на золото перевищить $2,600 за тройську унцію?',
+   poolYes:6300, poolNo:5900, t:'7д 00:00', tp:'new',
+   bg:'linear-gradient(160deg,#2a1f00,#6b5200,#2a1800)', icon:'🥇'},
+
+  {id:6, room:'crypto',q:'BTC $90K СЬОГОДНІ?',
+   sub:'Bitcoin закриє торговий день вище позначки $90,000?',
+   poolYes:22400, poolNo:8600, t:'00:45:00', tp:'flash',
+   bg:'linear-gradient(160deg,#0d0d1f,#0d2040)', icon:'📈'},
+
+  {id:7, room:'crypto',q:'ETH ДОСЯГНЕ $4,000?',
+   sub:'Ethereum досягне позначки $4,000 до кінця кварталу?',
+   poolYes:7800, poolNo:10700, t:'18д 00:00', tp:'hot',
+   bg:'linear-gradient(160deg,#0a1530,#1a1060)', icon:'🔷'},
+
+  {id:8, room:'crypto',q:'GPT-5 ЦЬОГО КВАРТАЛУ?',
+   sub:'OpenAI офіційно випустить GPT-5 до кінця поточного кварталу?',
+   poolYes:29000, poolNo:10000, t:'45д 00:00', tp:'mega',
+   bg:'linear-gradient(160deg,#0a0a1a,#2a1540)', icon:'🤖'},
+
+  {id:9, room:'us',    q:'ТРАМП ПІДПИШЕ ЗАКОН?',
+   sub:'Трамп підпише новий торговий закон до кінця поточного тижня?',
+   poolYes:7200, poolNo:11500, t:'4д 00:00', tp:'hot',
+   bg:'linear-gradient(160deg,#1a0a0a,#2a0808)', icon:'🇺🇸'},
+
+  {id:10,room:'eu',    q:'ЄВРО ДО ПАРИТЕТУ?',
+   sub:'EUR/USD впаде нижче позначки 1.00 до кінця поточного кварталу?',
+   poolYes:1800, poolNo:6400, t:'15д 00:00', tp:'hot',
+   bg:'linear-gradient(160deg,#001a10,#004530)', icon:'💶'},
+
+  {id:11,room:'sports',q:'РЕАЛ ВИГРАЄ ЛЧ?',
+   sub:'Реал Мадрид переможе у наступному матчі Ліги Чемпіонів?',
+   poolYes:19800, poolNo:11600, t:'4д 20:45', tp:'new',
+   bg:'linear-gradient(160deg,#001520,#003a50)', icon:'🏟️'},
+];
+
+// Ставки гравця {marketId: {side:'yes'|'no', amount:N}}
+const myBets = {};
+// Копія ринків (будемо мутувати пули при ставках)
+const D = MARKETS.map(m => ({...m}));
+
+// ════ ГЛОБАЛЬНИЙ СТАН (всі змінні в одному місці) ════
+const STATE = {
+  gems:        12500,  // баланс гравця
+  streak:      5,      // серія днів
+  games:       124,    // кількість ігор
+  curRoom:     'ua',   // поточна кімната на головній
+  mFilter:     'all',  // фільтр ринків
+  selectedBet: 100,    // розмір ставки
+  duelNextId:  1,      // лічильник ID дуелей
+};
+
+// Зворотна сумісність — прокси до STATE
+// (щоб не переписувати весь код одразу)
+Object.defineProperties(window, {
+  gems:        { get(){ return STATE.gems; },        set(v){ STATE.gems=v; },        configurable:true },
+  streak:      { get(){ return STATE.streak; },      set(v){ STATE.streak=v; },      configurable:true },
+  games:       { get(){ return STATE.games; },       set(v){ STATE.games=v; },       configurable:true },
+  curRoom:     { get(){ return STATE.curRoom; },     set(v){ STATE.curRoom=v; },     configurable:true },
+  mFilter:     { get(){ return STATE.mFilter; },     set(v){ STATE.mFilter=v; },     configurable:true },
+  selectedBet: { get(){ return STATE.selectedBet; }, set(v){ STATE.selectedBet=v; }, configurable:true },
+  duelNextId:  { get(){ return STATE.duelNextId; },  set(v){ STATE.duelNextId=v; },  configurable:true },
+});
+
+// ── Розрахункові функції ──────────────────────
+
+/** Загальний пул ринку */
+function totalPool(m){ return m.poolYes + m.poolNo; }
+
+/** Відсоток YES (для прогрес-бару) */
+function yesPct(m){
+  const t = totalPool(m);
+  return t === 0 ? 50 : Math.round(m.poolYes / t * 100);
+}
+
+/**
+ * Потенційний виграш якщо поставити amount на side.
+ * Повертає {payout, mult, isRefund}
+ *   payout  — скільки отримаєш назад (включно зі своєю ставкою)
+ *   mult    — множник (payout / amount)
+ *   isRefund— чи буде повернення (протилежний пул = 0)
+ */
+function calcPayout(m, side, amount){
+  const oppPool = side === 'yes' ? m.poolNo : m.poolYes;
+  const myPool  = side === 'yes' ? m.poolYes : m.poolNo;
+
+  // Якщо протилежний пул порожній — повернення
+  if(oppPool === 0) return { payout: amount, mult: 1.0, isRefund: true };
+
+  // Новий пул після ставки
+  const newMyPool = myPool + amount;
+  const total     = newMyPool + oppPool;
+  const netPot    = total * (1 - FEE);           // мінус комісія
+  const payout    = (amount / newMyPool) * netPot;
+  const mult      = payout / amount;
+  return { payout: Math.round(payout), mult: +mult.toFixed(2), isRefund: false };
+}
+
+/**
+ * Виконати ставку гравця.
+ * Оновлює пул ринку, списує монети, зберігає ставку.
+ */
+function placeBet(marketId, side, amount){
+  if(myBets[marketId]) return null;
+  if(gems < amount) return null;
+  // ВИПРАВЛЕНО: O(1) замість O(n)
+  const m = marketMap[marketId];
+  if(!m) return null;
+  const { payout, mult, isRefund } = calcPayout(m, side, amount);
+
+  // Оновлюємо пул
+  if(side === 'yes') m.poolYes += amount;
+  else               m.poolNo  += amount;
+
+  // Списуємо монети
+  gems -= amount;
+
+  // Запам'ятовуємо ставку
+  myBets[marketId] = { side, amount, payout, mult, isRefund };
+  games++;
+  saveState(); // ← зберігаємо одразу після ставки
+
+  return myBets[marketId];
+}
+
+/** Симуляція результату ринку для демо */
+function resolveMarket(m){
+  if(myBets[m.id] === undefined) return null;
+  const bet = myBets[m.id];
+
+  // Якщо повернення
+  if(bet.isRefund){
+    gems += bet.amount;
+    return { type:'refund', amount: bet.amount };
+  }
+
+  // Рандомний результат (у продакшені це оракул / адмін)
+  const won = Math.random() > WIN_THRESHOLD;
+  const isWinner = (won && bet.side==='yes') || (!won && bet.side==='no');
+
+  if(isWinner){
+    gems += bet.payout;
+    return { type:'win', payout: bet.payout, profit: bet.payout - bet.amount };
+  } else {
+    return { type:'loss', amount: bet.amount };
+  }
+}
+
+// ════ HAPTIC FEEDBACK ════
+const TG = window.Telegram?.WebApp;
+function haptic(type='light'){
+  if(TG?.HapticFeedback){
+    if(type==='success') TG.HapticFeedback.notificationOccurred('success');
+    else if(type==='error') TG.HapticFeedback.notificationOccurred('error');
+    else if(type==='heavy') TG.HapticFeedback.impactOccurred('heavy');
+    else TG.HapticFeedback.impactOccurred('light');
+    return;
+  }
+  if(navigator.vibrate){
+    navigator.vibrate({light:10,medium:20,heavy:35,success:15,error:[30,10,30]}[type]??10);
+  }
+}
+
+// ════ TIKTOK FEED ENGINE ════
+const TAG_C={flash:'#ffb800',mega:'#a78bfa',hot:'#ff6080',new:'#00e5a0'};
+const TAG_L={flash:'⚡ FLASH',mega:'🔮 MEGA',hot:'🔥 HOT',new:'🆕 NEW'};
+const RL={ua:'🇺🇦 Україна',global:'🌍 Глобальний',crypto:'₿ Крипто',us:'🇺🇸 США',eu:'🇪🇺 EU',sports:'⚽ Спорт'};
+
+function fmtPool(n){
+  if(n>=1000000) return (n/1000000).toFixed(1)+'M';
+  if(n>=1000)    return (n/1000).toFixed(1)+'K';
+  return n.toString();
+}
+
+function makeFeedCard(m, h){
+  const bet  = myBets[m.id];
+  const pct  = yesPct(m);
+  const noPct= 100 - pct;
+  const tot  = totalPool(m);
+
+  // Попередній розрахунок для кнопок
+  const pyYes = calcPayout(m,'yes', selectedBet);
+  const pyNo  = calcPayout(m,'no',  selectedBet);
+
+  // Підказка про стан пулів
+  let poolHint = '';
+  if(m.poolYes===0 || m.poolNo===0){
+    poolHint = `<div style="background:rgba(255,184,0,.15);border:1px solid rgba(255,184,0,.3);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--gold2);margin-bottom:9px;text-align:center;">⚠️ Поки лише одна сторона — ставка повернеться якщо нікого не буде навпроти</div>`;
+  }
+
+  const el = document.createElement('div');
+  el.className = 'scard';
+  el.style.height = h+'px';
+  el.dataset.id = m.id;
+  el.innerHTML = `
+    <div class="sv" style="background:${m.bg};">
+      <div class="sv-icon">${m.icon}</div>
+    </div>
+    <div class="sv-ov"></div>
+
+    <div class="sb">
+      <!-- мета рядок фіксований зверху -->
+      <div class="sb-meta">
+        <div class="sb-cat">${RL[m.room]||m.room}</div>
+        <div class="card-type-tag" style="border-color:${TAG_C[m.tp]};color:${TAG_C[m.tp]};">${TAG_L[m.tp]}</div>
+        <div class="sb-timer"><div class="tdot"></div>${m.t}</div>
+      </div>
+      <!-- контент знизу -->
+      <div class="sb-content">
+        <div class="sq">${m.q}</div>
+      <div class="ss">${m.sub}</div>
+
+      <!-- ПУЛИ (серце Parimutuel) -->
+      <div class="pool-section">
+        <div class="pool-bar-wrap">
+          <div class="pool-bar-yes" style="width:${pct}%"></div>
+          <div class="pool-bar-no"  style="width:${noPct}%"></div>
+        </div>
+        <div class="pool-labels">
+          <div class="pool-lbl-yes">
+            <span class="pool-pct-y">✅ ${pct}%</span>
+            <span class="pool-sum">${fmtPool(m.poolYes)} 💎</span>
+          </div>
+          <div class="pool-lbl-no">
+            <span class="pool-sum">${fmtPool(m.poolNo)} 💎</span>
+            <span class="pool-pct-n">❌ ${noPct}%</span>
+          </div>
+        </div>
+        <div class="pool-total">Загальний пул: <b>${fmtPool(tot)} 💎</b> </div>
+      </div>
+
+      ${poolHint}
+
+      <!-- ВИБІР СУМИ СТАВКИ -->
+      <div class="bet-size-row" id="bsr-${m.id}">
+        <span class="bet-label">Ставка:</span>
+        ${[50,100,500,1000].map(v=>`<button class="bet-chip${v===selectedBet?' bc-active':''}" onclick="setBet(${v},${m.id})">${v}</button>`).join('')}
+        <span class="bet-bal">Баланс: <b>${gems.toLocaleString()}</b> 💎</span>
+      </div>
+
+      <!-- КНОПКИ YES / NO з динамічним множником -->
+      <div class="rw" id="rw-${m.id}">
+        ${bet
+          ? betResultHTML(m, bet)
+          : `<button class="rwy" aria-label="Купити YES" onclick="feedVote(${m.id},'yes',this)">
+               BUY YES
+               <span class="rwp">${pyYes.isRefund ? '↩ повернення' : `x${pyYes.mult} · +${(pyYes.payout-selectedBet).toLocaleString()} 💎`}</span>
+             </button>
+             <button class="rwn" aria-label="Купити NO" onclick="feedVote(${m.id},'no',this)">
+               BUY NO
+               <span class="rwp">${pyNo.isRefund ? '↩ повернення' : `x${pyNo.mult} · +${(pyNo.payout-selectedBet).toLocaleString()} 💎`}</span>
+             </button>`
+        }
+      </div>
+      </div><!-- /sb-content -->
+    </div><!-- /sb -->
+    ${m===D[0]?'<div class="scroll-hint"><div class="sh-arrow">👇</div><div>Гортай вниз</div></div>':''}
+  `;
+  return el;
+}
+
+function betResultHTML(m, bet){
+  if(bet.resolved){
+    if(bet.result==='refund') return `<div class="bet-done refund-done">↩ СТАВКУ ПОВЕРНЕНО<div class="bet-done-sub">+${bet.amount} 💎 повернуто на баланс</div></div>`;
+    if(bet.result==='win')    return `<div class="bet-done win-done">🎯 ВИГРАШ!<div class="bet-done-sub">+${(bet.payout-bet.amount).toLocaleString()} 💎 прибуток (x${bet.mult})</div></div>`;
+    return `<div class="bet-done loss-done">❌ ПРОГРАШ<div class="bet-done-sub">−${bet.amount} 💎 пішли переможцям</div></div>`;
+  }
+  const sideLabel  = bet.side==='yes' ? '✅ YES' : '❌ NO';
+  const refundNote = bet.isRefund ? '<div style="font-size:10px;opacity:.7;margin-top:3px;">⚠️ Поверн. якщо немає протилежних ставок</div>' : '';
+  const hasDuel = duels.some(d => d.marketId === m.id);
+  return `
+    <div class="bet-pending-wrap">
+      <div class="bet-pending">
+        <div class="bp-side">${sideLabel}</div>
+        <div class="bp-info">
+          <div class="bp-amount">Ставка: <b>${bet.amount.toLocaleString()} 💎</b></div>
+          <div class="bp-payout">Виграш: <b style="color:var(--g)">${bet.payout.toLocaleString()} 💎</b> (x${bet.mult})</div>
+          ${refundNote}
+        </div>
+        <button class="resolve-btn" onclick="doResolve(${m.id})">⚡ Результат</button>
+      </div>
+      ${hasDuel
+        ? `<button class="challenge-btn" onclick="openDuel(${m.id})" style="background:rgba(0,229,160,.1);border-color:rgba(0,229,160,.3);color:var(--g);">⚔️ Переглянути дуель</button>`
+        : `<button class="challenge-btn" onclick="openChallengeSend(${m.id})">🔥 Кинути виклик другу</button>`
+      }
+    </div>`;
+}
+
+function setBet(amount, marketId){
+  selectedBet = amount;
+  // Оновлюємо всі BET SIZE rows і кнопки у видимих картках
+  document.querySelectorAll('.bet-chip').forEach(b=>{
+    b.classList.toggle('bc-active', parseInt(b.textContent)===amount);
+  });
+  // ВИПРАВЛЕНО: O(1) замість O(n)
+  const m = marketMap[marketId];
+  if(!m || myBets[m.id]) return;
+  const rw = document.getElementById(`rw-${marketId}`);
+  if(!rw) return;
+  const pyYes = calcPayout(m,'yes',selectedBet);
+  const pyNo  = calcPayout(m,'no', selectedBet);
+  rw.innerHTML = `
+    <button class="rwy" aria-label="Купити YES" onclick="feedVote(${m.id},'yes',this)">
+      BUY YES
+      <span class="rwp">${pyYes.isRefund?'↩ повернення':`x${pyYes.mult} · +${(pyYes.payout-selectedBet).toLocaleString()} 💎`}</span>
+    </button>
+    <button class="rwn" aria-label="Купити NO" onclick="feedVote(${m.id},'no',this)">
+      BUY NO
+      <span class="rwp">${pyNo.isRefund?'↩ повернення':`x${pyNo.mult} · +${(pyNo.payout-selectedBet).toLocaleString()} 💎`}</span>
+    </button>`;
+  // Оновити баланс в рядку
+  const bsr = document.getElementById(`bsr-${marketId}`);
+  if(bsr){const b=bsr.querySelector('.bet-bal');if(b)b.innerHTML=`Баланс: <b>${gems.toLocaleString()}</b> 💎`;}
+}
+
+function renderFeed(){
+  // Враховуємо висоту вкладок
+  const feed = document.getElementById('s-feed');
+  const tb   = feed.querySelector('.tb');
+  const tabs = feed.querySelector('.feed-tabs');
+  const nav  = feed.querySelector('.bnav');
+  const h    = window.innerHeight - tb.offsetHeight - (tabs?.offsetHeight||0) - nav.offsetHeight;
+  const fs   = document.getElementById('feed-scroll');
+  fs.style.height = h + 'px';
+  fs.innerHTML = '';
+  // Показуємо ринки відповідно до поточної вкладки
+  const tab = currentFeedTab === 'history' ? 'new' : currentFeedTab;
+  const markets = tab === 'active'
+    ? D.filter(m => myBets[m.id] && !myBets[m.id].resolved)
+    : D.filter(m => !myBets[m.id]);
+  (markets.length ? markets : D).forEach(m => fs.appendChild(makeFeedCard(m, h)));
+}
+
+function feedVote(id, side, btn){
+  haptic('heavy');
+  // ВИПРАВЛЕНО: O(1) замість O(n)
+  const m = marketMap[id];
+  if(!m) return;
+
+  if(gems < selectedBet){
+    haptic('error');
+    toast(`Недостатньо монет! Потрібно ${selectedBet} 💎`, true);
+    return;
+  }
+
+  const bet = placeBet(id, side, selectedBet);
+  if(!bet) return;
+
+  updBal();
+
+  // Оновити кнопки і пул прямо в картці без перерендеру
+  const rw = document.getElementById(`rw-${id}`);
+  if(rw) rw.outerHTML = `<div class="rw" id="rw-${id}">${betResultHTML(m, bet)}</div>`;
+
+  // Оновити пул-бар і лейбли
+  const card = document.querySelector(`.scard[data-id="${id}"]`);
+  if(card){
+    const pct = yesPct(m);
+    const tot = totalPool(m);
+    const barY = card.querySelector('.pool-bar-yes');
+    const barN = card.querySelector('.pool-bar-no');
+    if(barY) barY.style.width=pct+'%';
+    if(barN) barN.style.width=(100-pct)+'%';
+    card.querySelectorAll('.pool-sum')[0].textContent=fmtPool(m.poolYes)+' 💎';
+    card.querySelectorAll('.pool-sum')[1].textContent=fmtPool(m.poolNo)+' 💎';
+    card.querySelectorAll('.pool-pct-y')[0].textContent='✅ '+pct+'%';
+    card.querySelectorAll('.pool-pct-n')[0].textContent='❌ '+(100-pct)+'%';
+    const ptEl=card.querySelector('.pool-total');
+    if(ptEl) ptEl.innerHTML=`Загальний пул: <b>${fmtPool(tot)} 💎</b> `;
+  }
+
+  if(bet.isRefund){
+    haptic('medium');
+    toast(`↩ Ставка ${selectedBet} 💎 буде повернена якщо немає протилежних`);
+  } else {
+    haptic('success');
+    toast(`✅ Ставка прийнята! Можливий виграш: ${bet.payout.toLocaleString()} 💎`);
+  }
+
+  // Трекінг місій
+  updateMissionProgress('bets');
+  updateMissionProgress(`room_${m.room}`);
+  updateMissionProgress(`tp_${m.tp}`);
+  updateMissionProgress(`side_${side}`);
+  if(selectedBet >= 500) updateMissionProgress('bet_amount', selectedBet);
+}
+
+function doResolve(id){
+  haptic('medium');
+  const m = marketMap[id];
+  if(!m) return;
+  const result = resolveMarket(m);
+  if(!result) return;
+
+  const bet = myBets[id];
+  bet.resolved = true;
+  bet.result   = result.type;
+
+  // Записуємо в історію
+  addToHistory({
+    marketId: m.id,
+    question: m.q,
+    icon:     m.icon,
+    room:     m.room,
+    side:     bet.side,
+    amount:   bet.amount,
+    payout:   bet.payout,
+    mult:     bet.mult,
+    result:   result.type,
+    profit:   result.type === 'win'    ? result.profit :
+              result.type === 'refund' ? 0 : -bet.amount,
+  });
+
+  updBal();
+  if(result.type==='win'){
+    haptic('success');
+    burst(result.profit);
+    toast(`🎯 ВИГРАШ! +${result.profit.toLocaleString()} 💎 прибуток`);
+    updateMissionProgress('wins'); // трекінг перемог
+  } else if(result.type==='refund'){
+    haptic('medium');
+    toast(`↩ Ставку повернено: +${result.amount} 💎`);
+  } else {
+    haptic('error');
+    toast(`❌ Програш. Монети пішли переможцям`, true);
+  }
+
+  const rw = document.getElementById(`rw-${id}`);
+  if(rw) rw.outerHTML = `<div class="rw" id="rw-${id}">${betResultHTML(m, bet)}</div>`;
+}
+
+function resetFeed(){
+  // ВИПРАВЛЕНО: прибрано 'voted' якого не існує
+  Object.keys(myBets).forEach(k => delete myBets[k]);
+  renderFeed();
+}
+
+// ════ COIN BURST ════
+function burst(pts){
+  // ВИПРАВЛЕНО: DocumentFragment = один reflow замість 6
+  const frag = document.createDocumentFragment();
+  const bx = window.innerWidth/2, by = window.innerHeight/2;
+
+  if(pts > 0){
+    const b = document.createElement('div');
+    b.className = 'cb';
+    b.textContent = `+${pts} 💎`;
+    b.style.cssText = `left:${bx-40}px;top:${by-20}px`;
+    frag.appendChild(b);
+    setTimeout(()=>b.remove(), 900);
+  }
+
+  ['💎','✨','⭐','💫','🌟'].forEach((e,i)=>{
+    const p = document.createElement('div');
+    p.className = 'cp';
+    const a = (i/5)*Math.PI*2, d = 60+Math.random()*50;
+    p.textContent = e;
+    p.style.cssText = `left:${bx+Math.random()*24-12}px;top:${by+Math.random()*24-12}px;--e:translate(${Math.cos(a)*d}px,${Math.sin(a)*d-40}px);animation-delay:${Math.random()*.1}s`;
+    frag.appendChild(p);
+    setTimeout(()=>p.remove(), 900);
+  });
+
+  document.body.appendChild(frag); // один раз — один reflow
+}
+
+// ════ HOME / MARKET CARDS ════
+const tagCls={flash:'t-fl',mega:'t-me',hot:'t-ho',new:'t-ne'};
+// tagLbl видалено — використовуємо TAG_L (рядок вище)
+
+function buildCard(m){
+  const bet=myBets[m.id];
+  const pct=yesPct(m), noPct=100-pct, tot=totalPool(m);
+  const pyYes=calcPayout(m,'yes',selectedBet);
+  const pyNo =calcPayout(m,'no', selectedBet);
+  return`<div class="pcard" style="position:relative;">
+    <span class="ptag ${tagCls[m.tp]}">${TAG_L[m.tp]}</span>
+    <div class="pcb">
+      <div class="pcm"><div class="pcc">${m.icon}</div><div class="pcq">${m.q}</div></div>
+      <div class="pcs">${m.sub}</div>
+      <!-- POOL -->
+      <div class="pool-section" style="margin-bottom:8px;">
+        <div class="pool-bar-wrap" style="height:6px;">
+          <div class="pool-bar-yes" style="width:${pct}%"></div>
+          <div class="pool-bar-no"  style="width:${noPct}%"></div>
+        </div>
+        <div class="pool-labels" style="margin-bottom:2px;">
+          <div class="pool-lbl-yes" style="gap:4px;"><span class="pool-pct-y" style="font-size:12px;">✅ ${pct}%</span><span class="pool-sum">${fmtPool(m.poolYes)} 💎</span></div>
+          <div class="pool-lbl-no"  style="gap:4px;"><span class="pool-sum">${fmtPool(m.poolNo)} 💎</span><span class="pool-pct-n" style="font-size:12px;">❌ ${noPct}%</span></div>
+        </div>
+        <div class="pool-total" style="font-size:9px;">Пул: <b>${fmtPool(tot)} 💎</b> </div>
+      </div>
+    </div>
+    ${bet
+      ? `<div style="padding:0 14px 12px;">${betResultHTML(m,bet)}</div>`
+      : `<div class="yn">
+          <button class="yb yes-b" onclick="tapCard(${m.id},'yes',event)">BUY YES<span class="ys">${pyYes.isRefund?'↩ поверн.':`x${pyYes.mult}`}</span></button>
+          <button class="yb no-b"  onclick="tapCard(${m.id},'no', event)">BUY NO<span class="ys">${pyNo.isRefund?'↩ поверн.':`x${pyNo.mult}`}</span></button>
+        </div>`
+    }
+    <div class="timer-row2"><div class="tv">⏱ ${m.t}</div><div class="ch" onclick="doResolve(${m.id})">⚡ Результат</div></div>
+  </div>`;
+}
+
+function tapCard(id,side,e){
+  e.stopPropagation();
+  haptic('heavy');
+  if(gems<selectedBet){haptic('error');toast(`Недостатньо монет!`,true);return;}
+  const bet=placeBet(id,side,selectedBet);
+  if(!bet){haptic('error');toast('Вже є ставка!',true);return;}
+  updBal();
+  if(bet.isRefund) toast(`↩ Ставка буде повернена якщо немає протилежних`);
+  else {haptic('success');toast(`✅ Ставка ${selectedBet} 💎 прийнята! x${bet.mult}`);}
+  renderHCards();renderMCards();
+  updateMissionProgress('bets');
+  updateMissionProgress(`room_${marketMap[id]?.room||''}`);
+}
+
+function renderHCards(){
+  document.getElementById('hcards').innerHTML=D.filter(m=>m.room===curRoom).slice(0,3).map(buildCard).join('');
+}
+function renderMCards(){
+  document.getElementById('mcards').innerHTML=(mFilter==='all'?D:D.filter(m=>m.room===mFilter)).map(buildCard).join('');
+}
+function setRoom(r,btn){
+  curRoom=r;
+  document.querySelectorAll('#rtabs .rtab').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderHCards();
+}
+function filterM(f,btn){
+  mFilter=f;
+  document.querySelectorAll('.mft').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderMCards();
+}
+function setLb(btn){document.querySelectorAll('.lb-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+
+// ════════════════════════════════════════
+//  МІСІЇ ДНЯ
+//  Щодня о 00:00 генеруються 3 нові місії
+// ════════════════════════════════════════
+
+const MISSIONS_KEY    = 'oraclex_missions_v1';
+const MISSIONS_COUNT  = 3;
+const MISSIONS_BONUS  = 500; // бонус за всі 3
+
+// Пул всіх можливих місій
+const MISSION_POOL = [
+  // Ставки
+  { id:'bet1',    text:'Зроби 1 ставку сьогодні',        reward:100, target:1, type:'bets',     icon:'🎯' },
+  { id:'bet2',    text:'Зроби 2 ставки сьогодні',        reward:180, target:2, type:'bets',     icon:'🎯' },
+  { id:'bet3',    text:'Зроби 3 ставки сьогодні',        reward:280, target:3, type:'bets',     icon:'🎯' },
+  { id:'crypto',  text:'Постав на крипто ринок',         reward:150, target:1, type:'room_crypto', icon:'₿' },
+  { id:'sports',  text:'Постав на спортивний ринок',     reward:150, target:1, type:'room_sports',  icon:'⚽' },
+  { id:'ua',      text:'Постав на українській ринок',    reward:120, target:1, type:'room_ua',      icon:'🇺🇦' },
+  { id:'global',  text:'Постав на глобальний ринок',     reward:120, target:1, type:'room_global',  icon:'🌍' },
+  { id:'flash',   text:'Постав на FLASH ринок (до 6г)',  reward:200, target:1, type:'tp_flash',     icon:'⚡' },
+  { id:'mega',    text:'Постав на MEGA ринок',           reward:200, target:1, type:'tp_mega',      icon:'🔮' },
+  { id:'big',     text:'Постав 500+ монет',              reward:220, target:500, type:'bet_amount', icon:'💰' },
+  // Соціальні
+  { id:'challenge', text:'Кинь виклик другу',            reward:300, target:1, type:'challenge',   icon:'🔥' },
+  { id:'duel',      text:'Переглянь активну дуель',      reward:100, target:1, type:'view_duel',   icon:'⚔️' },
+  { id:'scroll5',   text:'Переглянь 5 ринків у стрічці', reward:80,  target:5, type:'scroll',      icon:'👀' },
+  { id:'create',    text:'Створи свій ринок',            reward:400, target:1, type:'create_market', icon:'✏️' },
+  // Щоденні
+  { id:'daily',     text:'Забери щоденну нагороду',      reward:50,  target:1, type:'daily_claim', icon:'🎁' },
+  { id:'win1',      text:'Вгадай правильно 1 раз',       reward:200, target:1, type:'wins',        icon:'🏆' },
+  { id:'win2',      text:'Вгадай правильно 2 рази',      reward:350, target:2, type:'wins',        icon:'🏆' },
+  { id:'yes',       text:'Постав YES на будь-який ринок', reward:100, target:1, type:'side_yes',   icon:'✅' },
+  { id:'no',        text:'Постав NO на будь-який ринок',  reward:100, target:1, type:'side_no',    icon:'❌' },
+  { id:'feed',      text:'Зайди в стрічку і переглянь',  reward:50,  target:1, type:'open_feed',  icon:'⚡' },
+];
+
+// ── Отримати/зберегти місії ──────────────
+function getMissions(){
+  try {
+    const raw  = localStorage.getItem(MISSIONS_KEY);
+    const data = raw ? JSON.parse(raw) : null;
+    const today = new Date().toDateString();
+
+    // Якщо місії вже є і вони на сьогодні — повертаємо
+    if(data && data.date === today) return data;
+
+    // Генеруємо нові місії на сьогодні
+    return generateDailyMissions(today);
+  } catch { return generateDailyMissions(new Date().toDateString()); }
+}
+
+function saveMissions(data){
+  try { localStorage.setItem(MISSIONS_KEY, JSON.stringify(data)); } catch {}
+}
+
+function generateDailyMissions(today){
+  // Вибираємо 3 різні місії — детерміновано на основі дати
+  // (щоб у всіх гравців були однакові місії в один день)
+  const seed    = today.split('').reduce((a,c) => a + c.charCodeAt(0), 0);
+  const shuffled = [...MISSION_POOL].sort((a,b) =>
+    (Math.sin(seed + a.id.length) - Math.sin(seed + b.id.length))
+  );
+  const selected = shuffled.slice(0, MISSIONS_COUNT);
+
+  const data = {
+    date:       today,
+    bonusClaimed: false,
+    missions:   selected.map(m => ({
+      ...m,
+      progress: 0,   // поточний прогрес
+      done:     false,
+      claimed:  false,
+    })),
+  };
+
+  saveMissions(data);
+  return data;
+}
+
+// ── Оновити прогрес місії ────────────────
+function updateMissionProgress(type, value = 1){
+  const data = getMissions();
+  let changed = false;
+
+  data.missions.forEach(m => {
+    if(m.done) return;
+
+    let matches = false;
+    if(m.type === type) matches = true;
+    // Спеціальний тип bet_amount — порівнюємо суму
+    if(m.type === 'bet_amount' && type === 'bet_amount' && value >= m.target) matches = true;
+
+    if(matches){
+      if(m.type === 'bet_amount'){
+        m.progress = m.target; // одна велика ставка виконує
+      } else {
+        m.progress = Math.min(m.progress + 1, m.target);
+      }
+      if(m.progress >= m.target && !m.done){
+        m.done = true;
+        changed = true;
+      }
+    }
+  });
+
+  if(changed) saveMissions(data);
+  renderMissions();
+  return changed;
+}
+
+// ── Забрати нагороду за місію ────────────
+function claimMissionReward(missionId){
+  const data = getMissions();
+  const m    = data.missions.find(x => x.id === missionId);
+  if(!m || !m.done || m.claimed) return;
+
+  m.claimed = true;
+  gems += m.reward;
+  haptic('success');
+  burst(m.reward);
+  toast(`✅ Місія виконана! +${m.reward} 💎`);
+  updBal();
+  saveMissions(data);
+
+  // Перевіряємо чи всі 3 виконані — бонус
+  const allDone = data.missions.every(x => x.done && x.claimed);
+  if(allDone && !data.bonusClaimed){
+    data.bonusClaimed = true;
+    gems += MISSIONS_BONUS;
+    saveMissions(data);
+    updBal();
+    setTimeout(() => {
+      haptic('success');
+      burst(MISSIONS_BONUS);
+      toast(`🎉 ВСІ МІСІЇ! Бонус +${MISSIONS_BONUS} 💎 🔥`);
+    }, 800);
+  }
+
+  renderMissions();
+}
+
+// ── Рендер блоку місій ───────────────────
+function renderMissions(){
+  const el = document.getElementById('missions-block');
+  if(!el) return;
+
+  const data    = getMissions();
+  const missions = data.missions;
+  const doneCount = missions.filter(m => m.done).length;
+  const allDone   = doneCount === MISSIONS_COUNT;
+  const pct       = Math.round(doneCount / MISSIONS_COUNT * 100);
+
+  let html = `
+    <div class="missions-header">
+      <div class="missions-title">📋 Місії дня</div>
+      <div class="missions-progress-text">${doneCount}/${MISSIONS_COUNT} виконано</div>
+    </div>
+    <div class="missions-bar-wrap">
+      <div class="missions-bar-fill" style="width:${pct}%"></div>
+    </div>`;
+
+  missions.forEach(m => {
+    const isDone    = m.done;
+    const isClaimed = m.claimed;
+    const progText  = m.target > 1 ? `${m.progress}/${m.target}` : '';
+
+    html += `
+      <div class="mission-item${isDone ? ' done' : ''}" onclick="${isDone && !isClaimed ? `claimMissionReward('${m.id}')` : ''}">
+        <div class="mission-check">${isDone ? '✓' : m.icon}</div>
+        <div class="mission-info">
+          <div class="mission-text">${m.text}</div>
+          ${progText && !isDone ? `<div class="mission-progress-small">${m.progress} / ${m.target}</div>` : ''}
+          ${isDone && !isClaimed ? `<div class="mission-progress-small" style="color:var(--g)">Натисни щоб забрати!</div>` : ''}
+          ${isClaimed ? `<div class="mission-progress-small" style="color:var(--sub)">Нагороду отримано ✅</div>` : ''}
+        </div>
+        <div class="mission-reward">${isClaimed ? '✅' : `+${m.reward} 💎`}</div>
+      </div>`;
+  });
+
+  // Бонус за всі 3
+  if(allDone && data.bonusClaimed){
+    html += `<div class="missions-all-done">🎉 Всі місії виконані! Повертайся завтра</div>`;
+  } else {
+    html += `
+      <div class="missions-bonus">
+        <div class="missions-bonus-text">🔥 Бонус за всі 3 місії</div>
+        <div class="missions-bonus-reward">${data.bonusClaimed ? '✅ Отримано' : `+${MISSIONS_BONUS} 💎`}</div>
+      </div>`;
+  }
+
+  el.innerHTML = html;
+}
+
+// ════════════════════════════════════════
+//  ШЛЯХ ПРОВІСНИКА
+//  20 сходинок щодня, кожна = правильний прогноз
+// ════════════════════════════════════════
+
+const PATH_KEY   = 'oraclex_path_v1';
+const PATH_STEPS = 20;
+
+// Структура кроків: нагорода і тип
+const STEP_CONFIG = [
+  {n:1,  reward:50,  type:'normal'},
+  {n:2,  reward:50,  type:'normal'},
+  {n:3,  reward:75,  type:'flash'},    // ⚡ подвійні
+  {n:4,  reward:75,  type:'normal'},
+  {n:5,  reward:100, type:'treasure'}, // 💎 +300 бонус
+  {n:6,  reward:100, type:'normal'},
+  {n:7,  reward:100, type:'normal'},
+  {n:8,  reward:125, type:'shield'},   // 🛡️ захист
+  {n:9,  reward:125, type:'normal'},
+  {n:10, reward:150, type:'bonus'},    // 🔥 +50% до наступної
+  {n:11, reward:150, type:'normal'},
+  {n:12, reward:150, type:'flash'},
+  {n:13, reward:175, type:'normal'},
+  {n:14, reward:175, type:'normal'},
+  {n:15, reward:200, type:'treasure'},
+  {n:16, reward:200, type:'normal'},
+  {n:17, reward:200, type:'shield'},
+  {n:18, reward:225, type:'normal'},
+  {n:19, reward:225, type:'bonus'},
+  {n:20, reward:500, type:'final'},    // 🏆 ЛЕГЕНДА ДНЯ
+];
+
+const STEP_ICONS = {
+  normal:   '',
+  flash:    '⚡',
+  treasure: '💎',
+  shield:   '🛡️',
+  bonus:    '🔥',
+  final:    '👑',
+};
+
+const TYPE_LABELS = {
+  flash:    'x2 монети',
+  treasure: '+300 бонус',
+  shield:   'Захист',
+  bonus:    '+50% далі',
+  final:    'ЛЕГЕНДА',
+};
+
+// ── Стан шляху ───────────────────────────
+function getPath(){
+  try {
+    const raw   = localStorage.getItem(PATH_KEY);
+    const data  = raw ? JSON.parse(raw) : null;
+    const today = new Date().toDateString();
+
+    if(data && data.date === today) return data;
+
+    // Новий день — новий шлях
+    const fresh = {
+      date:        today,
+      currentStep: 0,       // 0 = ще не почав
+      gemsToday:   0,       // зароблено сьогодні
+      hasShield:   false,   // активний захист
+      bonusNext:   false,   // +50% на наступний крок
+      completed:   false,   // пройшов всі 20
+      steps: STEP_CONFIG.map(s => ({ ...s, done: false })),
+    };
+    savePath(fresh);
+    return fresh;
+  } catch { return null; }
+}
+
+function savePath(data){
+  try { localStorage.setItem(PATH_KEY, JSON.stringify(data)); } catch {}
+}
+
+// ── Рендер шляху ────────────────────────
+function renderPath(){
+  const data = getPath();
+  if(!data) return;
+
+  const cur  = data.currentStep;
+  const pct  = Math.round(cur / PATH_STEPS * 100);
+
+  // Хедер
+  const dayNum = Math.ceil((Date.now() - new Date(2026,0,1)) / 86_400_000);
+  const dayEl = document.getElementById('path-day-label');
+  const numEl = document.getElementById('path-current-num');
+  const gemEl = document.getElementById('path-gems-today');
+  const fillEl= document.getElementById('path-progress-fill');
+  const balEl = document.getElementById('path-bal');
+  if(dayEl)  dayEl.textContent  = `День ${dayNum}`;
+  if(numEl)  numEl.textContent  = cur;
+  if(gemEl)  gemEl.textContent  = data.gemsToday.toLocaleString() + ' 💎';
+  if(fillEl) fillEl.style.width = pct + '%';
+  if(balEl)  balEl.textContent  = gems.toLocaleString();
+
+  // Кнопка
+  const btn = document.getElementById('path-action-btn');
+  if(btn){
+    if(data.completed){
+      btn.textContent = '🏆 Шлях пройдено! Завтра новий';
+      btn.classList.add('completed');
+      btn.onclick = null;
+    } else {
+      btn.innerHTML = `🔮 Зробити прогноз <span style="font-size:12px;opacity:.8;">(крок ${cur+1})</span>`;
+      btn.classList.remove('completed');
+      btn.onclick = openPathModal;
+    }
+  }
+
+  // Оновлюємо хоум кнопку
+  const homeStatus = document.getElementById('path-home-status');
+  const homeReward = document.getElementById('path-home-reward');
+  if(homeStatus) homeStatus.textContent = data.completed
+    ? '✅ Сьогодні пройдено!'
+    : `Крок ${cur}/20 · продовжуй!`;
+  if(homeReward) homeReward.textContent = data.completed
+    ? `+${data.gemsToday.toLocaleString()} 💎`
+    : `до 3,500 💎`;
+
+  // Сходинки — будуємо знизу вгору
+  const stepsEl = document.getElementById('path-steps');
+  if(!stepsEl) return;
+
+  // Реверсуємо щоб 20 була зверху
+  const reversed = [...data.steps].reverse();
+  let html = '';
+
+  reversed.forEach((step, idx) => {
+    const realIdx = PATH_STEPS - 1 - idx; // реальний індекс
+    const isDone    = realIdx < cur;
+    const isCurrent = realIdx === cur && !data.completed;
+    const isLocked  = realIdx > cur;
+
+    let cls = 'step-locked';
+    if(isDone)    cls = 'step-done';
+    if(isCurrent) cls = 'step-current';
+    if(step.type !== 'normal' && step.type !== 'final' && !isLocked){
+      cls += ` step-${step.type}`;
+    }
+    if(step.type === 'final'){
+      cls = isDone ? 'step-done step-final' : isCurrent ? 'step-current step-final' : 'step-locked step-final';
+    }
+
+    const specialIcon = step.type !== 'normal' && step.type !== 'final'
+      ? `<div class="step-special-icon">${STEP_ICONS[step.type]}</div>` : '';
+
+    const rewardText = isDone ? '✓' : `+${step.reward}`;
+    const connectorCls = isDone ? 'done-line' : '';
+
+    html += `
+      <div class="path-step">
+        <div class="step-circle ${cls}" onclick="${isCurrent ? 'openPathModal()' : ''}">
+          ${specialIcon}
+          <div class="step-num">${isDone ? '✓' : step.n}</div>
+          <div class="step-reward">${rewardText} 💎</div>
+        </div>
+      </div>`;
+
+    // Коннектор між кроками (крім останнього)
+    if(idx < reversed.length - 1){
+      html += `<div class="step-connector ${connectorCls}"></div>`;
+    }
+  });
+
+  stepsEl.innerHTML = html;
+
+  // Скролимо до поточного кроку
+  setTimeout(() => {
+    const stepEls = stepsEl.querySelectorAll('.path-step');
+    const curEl = stepEls[PATH_STEPS - 1 - cur];
+    if(curEl) curEl.scrollIntoView({ behavior:'smooth', block:'center' });
+  }, 100);
+}
+
+// ── Модалка вибору ринку для кроку ───────
+function openPathModal(){
+  const data = getPath();
+  if(!data || data.completed) return;
+
+  haptic('medium');
+
+  // Беремо 3 відкриті ринки без ставок
+  const available = D.filter(m => !myBets[m.id]).slice(0, 4);
+
+  if(available.length === 0){
+    toast('Немає доступних ринків! Перевір стрічку.', true);
+    return;
+  }
+
+  // Будуємо модалку
+  const cur      = data.currentStep;
+  const stepConf = STEP_CONFIG[cur];
+  const isFlash  = stepConf.type === 'flash';
+  const isBonus  = data.bonusNext;
+  const reward   = isFlash
+    ? stepConf.reward * 2
+    : isBonus
+    ? Math.round(stepConf.reward * 1.5)
+    : stepConf.reward;
+
+  let specialNote = '';
+  if(isFlash)          specialNote = `<div style="color:var(--gold2);font-size:12px;font-weight:700;margin-bottom:8px;">⚡ Flash крок — подвійна нагорода!</div>`;
+  if(isBonus)          specialNote = `<div style="color:var(--r);font-size:12px;font-weight:700;margin-bottom:8px;">🔥 Бонусний крок — +50% нагорода!</div>`;
+  if(stepConf.type==='treasure') specialNote = `<div style="color:#ec4899;font-size:12px;font-weight:700;margin-bottom:8px;">💎 Скарб — +300 бонус при виграші!</div>`;
+  if(data.hasShield)   specialNote += `<div style="color:var(--blue);font-size:12px;font-weight:700;margin-bottom:8px;">🛡️ Захист активний — помилка не зарахується</div>`;
+
+  const marketsHTML = available.map(m => {
+    const pct = yesPct(m);
+    return `
+      <div class="path-market-item">
+        <div class="path-market-q">${m.icon} ${m.q}</div>
+        <div class="path-market-meta">YES ${pct}% · NO ${100-pct}% · Пул: ${fmtPool(totalPool(m))} 💎</div>
+        <div class="path-market-btns">
+          <button class="path-yes-btn" onclick="makePathBet(${m.id},'yes')">✅ YES</button>
+          <button class="path-no-btn"  onclick="makePathBet(${m.id},'no')">❌ NO</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  const overlay = document.createElement('div');
+  overlay.className = 'path-modal-overlay';
+  overlay.id = 'path-modal';
+  overlay.innerHTML = `
+    <div class="path-modal">
+      <div class="path-modal-title">🔮 Крок ${cur + 1} — Обери ринок</div>
+      <div class="path-modal-sub">Вгадай правильно → +${reward} 💎 і піднімаєшся на сходинку</div>
+      ${specialNote}
+      ${marketsHTML}
+      <button onclick="closePathModal()" style="width:100%;margin-top:8px;padding:12px;border-radius:12px;border:1px solid var(--b2);background:transparent;color:var(--sub);font-family:var(--f-display);font-size:15px;font-weight:700;cursor:pointer;">Скасувати</button>
+    </div>`;
+
+  document.body.appendChild(overlay);
+}
+
+function closePathModal(){
+  document.getElementById('path-modal')?.remove();
+}
+
+// ── Зробити ставку на шляху ──────────────
+function makePathBet(marketId, side){
+  closePathModal();
+  haptic('heavy');
+
+  const data = getPath();
+  const m    = marketMap[marketId];
+  if(!data || !m) return;
+
+  const cur      = data.currentStep;
+  const stepConf = STEP_CONFIG[cur];
+
+  // Симулюємо результат (у продакшені — реальний оракул)
+  const won = Math.random() > WIN_THRESHOLD;
+
+  if(won){
+    // Рахуємо нагороду
+    let reward = stepConf.reward;
+    if(stepConf.type === 'flash')    reward *= 2;
+    if(data.bonusNext)               reward  = Math.round(reward * 1.5);
+    if(stepConf.type === 'treasure') reward += 300;
+
+    data.bonusNext = stepConf.type === 'bonus'; // наступний з бонусом
+    data.hasShield = stepConf.type === 'shield' ? true : data.hasShield;
+
+    // Якщо щойно отримали shield — він на НАСТУПНИЙ крок, не поточний
+    if(stepConf.type === 'shield') data.hasShield = true;
+
+    data.steps[cur].done = true;
+    data.currentStep++;
+    data.gemsToday += reward;
+    gems += reward;
+
+    if(data.currentStep >= PATH_STEPS) data.completed = true;
+
+    savePath(data);
+    updBal();
+    haptic('success');
+    burst(reward);
+
+    const msg = data.completed
+      ? `👑 ЛЕГЕНДА ДНЯ! Шлях пройдено! +${reward} 💎`
+      : `🎯 Правильно! +${reward} 💎 · Крок ${data.currentStep}/20`;
+    toast(msg);
+
+    // Трекінг місії
+    updateMissionProgress('wins');
+
+  } else {
+    // Помилка
+    if(data.hasShield){
+      data.hasShield = false;
+      savePath(data);
+      haptic('medium');
+      toast('🛡️ Захист спрацював! Крок збережено.');
+    } else {
+      savePath(data);
+      haptic('error');
+      toast('❌ Невірно! Спробуй ще раз.', true);
+    }
+  }
+
+  renderPath();
+  updateMissionProgress('bets');
+  updateMissionProgress(`room_${m.room}`);
+}
+
+// ════ ЩОДЕННА НАГОРОДА ════
+const DAILY_KEY    = 'oraclex_daily_v1';
+const DAILY_REWARD = 250;
+
+function claimDaily(){
+  const last = localStorage.getItem(DAILY_KEY);
+  const now  = Date.now();
+  const MS24 = 86_400_000; // 24 години в мс
+
+  if(last && now - parseInt(last) < MS24){
+    const msLeft  = MS24 - (now - parseInt(last));
+    const hours   = Math.floor(msLeft / 3_600_000);
+    const minutes = Math.floor((msLeft % 3_600_000) / 60_000);
+    haptic('error');
+    toast(`⏰ Наступна нагорода через ${hours}г ${minutes}хв`, true);
+    updateDailyUI(); // оновлюємо кнопку
+    return;
+  }
+
+  // Видаємо нагороду
+  gems += DAILY_REWARD;
+  streak++;
+  localStorage.setItem(DAILY_KEY, now.toString());
+  saveState();
+  updBal();
+  haptic('success');
+  burst(DAILY_REWARD);
+  toast(`🎁 +${DAILY_REWARD} 💎 щоденна нагорода! День ${streak} 🔥`);
+  updateDailyUI();
+  updateMissionProgress('daily_claim'); // місія
+}
+
+function updateDailyUI(){
+  const last    = localStorage.getItem(DAILY_KEY);
+  const now     = Date.now();
+  const MS24    = 86_400_000;
+  const claimed = last && (now - parseInt(last) < MS24);
+
+  const dailyEl = document.querySelector('.daily');
+  const btnEl   = document.querySelector('.d-btn');
+  const subEl   = document.querySelector('.d-sub');
+  if(!dailyEl || !btnEl) return;
+
+  if(claimed){
+    const msLeft  = MS24 - (now - parseInt(last));
+    const hours   = Math.floor(msLeft / 3_600_000);
+    const minutes = Math.floor((msLeft % 3_600_000) / 60_000);
+    dailyEl.style.opacity  = '.5';
+    dailyEl.style.cursor   = 'default';
+    btnEl.textContent      = `${hours}г ${minutes}хв`;
+    btnEl.style.background = 'var(--sub)';
+    if(subEl) subEl.textContent = 'Вже забрано сьогодні ✅';
+  } else {
+    dailyEl.style.opacity  = '1';
+    dailyEl.style.cursor   = 'pointer';
+    btnEl.textContent      = 'Забрати';
+    btnEl.style.background = '';
+    if(subEl) subEl.textContent = `День ${streak} → +${DAILY_REWARD} 💎 · Серія горить!`;
+  }
+}
+
+// ════ ІСТОРІЯ СТАВОК ════
+// Зберігаємо в localStorage
+const HISTORY_KEY = 'oraclex_history_v1';
+
+function getHistory(){
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function addToHistory(entry){
+  try {
+    const hist = getHistory();
+    hist.unshift({ // додаємо на початок (найновіші зверху)
+      id:        entry.id || Date.now(),
+      marketId:  entry.marketId,
+      question:  entry.question,
+      icon:      entry.icon,
+      room:      entry.room,
+      side:      entry.side,      // 'yes' | 'no'
+      amount:    entry.amount,
+      payout:    entry.payout,
+      mult:      entry.mult,
+      result:    entry.result,    // 'win' | 'loss' | 'refund' | 'pending'
+      profit:    entry.profit,    // число (може бути від'ємне)
+      timestamp: Date.now(),
+    });
+    // Зберігаємо максимум 100 записів
+    if(hist.length > 100) hist.splice(100);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(hist));
+  } catch(e) { console.warn('addToHistory:', e.message); }
+}
+
+function timeAgo(ts){
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff / 60_000);
+  const h = Math.floor(diff / 3_600_000);
+  const d = Math.floor(diff / 86_400_000);
+  if(m < 1)  return 'щойно';
+  if(m < 60) return `${m} хв тому`;
+  if(h < 24) return `${h} год тому`;
+  return `${d} дн тому`;
+}
+
+function renderHistory(){
+  const el = document.getElementById('history-content');
+  if(!el) return;
+
+  const hist = getHistory();
+
+  // Рахуємо статистику
+  const resolved = hist.filter(h => h.result !== 'pending');
+  const wins     = resolved.filter(h => h.result === 'win').length;
+  const losses   = resolved.filter(h => h.result === 'loss').length;
+  const totalPnl = resolved.reduce((sum, h) => sum + (h.profit || 0), 0);
+  const winRate  = resolved.length > 0 ? Math.round(wins / resolved.length * 100) : 0;
+
+  if(hist.length === 0){
+    el.innerHTML = `
+      <div class="hist-empty">
+        <div class="hist-empty-ico">📜</div>
+        <div class="hist-empty-t">Історія порожня</div>
+        <div class="hist-empty-s">Зроби свою першу ставку —<br>вона з'явиться тут</div>
+      </div>`;
+    return;
+  }
+
+  // Зведена статистика
+  const pnlColor = totalPnl >= 0 ? 'var(--g)' : 'var(--r)';
+  const pnlSign  = totalPnl >= 0 ? '+' : '';
+  let html = `
+    <div class="hist-summary">
+      <div class="hist-stat">
+        <div class="hist-stat-val" style="color:var(--g)">${winRate}%</div>
+        <div class="hist-stat-lbl">Win Rate</div>
+      </div>
+      <div class="hist-stat">
+        <div class="hist-stat-val" style="color:var(--text)">${resolved.length}</div>
+        <div class="hist-stat-lbl">Ігор</div>
+      </div>
+      <div class="hist-stat">
+        <div class="hist-stat-val" style="color:${pnlColor}">${pnlSign}${totalPnl.toLocaleString()}</div>
+        <div class="hist-stat-lbl">PnL 💎</div>
+      </div>
+    </div>`;
+
+  // Картки
+  html += hist.map(h => {
+    const icons   = { win:'🎯', loss:'❌', refund:'↩', pending:'⏳' };
+    const results = { win:'ВИГРАШ', loss:'ПРОГРАШ', refund:'ПОВЕРНЕННЯ', pending:'ОЧІКУЄ' };
+    const amountStr = h.result === 'win'
+      ? `+${(h.profit||0).toLocaleString()}`
+      : h.result === 'loss'
+      ? `-${h.amount.toLocaleString()}`
+      : h.result === 'refund'
+      ? `↩${h.amount.toLocaleString()}`
+      : `${h.amount.toLocaleString()}`;
+    const amountCls = h.result === 'win' ? 'pos' : h.result === 'loss' ? 'neg' : 'neu';
+    const sideLabel = h.side === 'yes' ? '✅ YES' : '❌ NO';
+
+    return `
+      <div class="hist-card">
+        <div class="hist-icon ${h.result}">${icons[h.result]||'⏳'}</div>
+        <div class="hist-body">
+          <div class="hist-q">${h.icon||'📊'} ${h.question}</div>
+          <div class="hist-meta">${sideLabel} · Ставка: ${h.amount.toLocaleString()} 💎${h.mult ? ` · x${h.mult}` : ''}</div>
+          <div class="hist-result ${h.result}">${results[h.result]||'ОЧІКУЄ'}</div>
+        </div>
+        <div class="hist-right">
+          <div class="hist-amount ${amountCls}">${amountStr} 💎</div>
+          <div class="hist-time">${timeAgo(h.timestamp)}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  el.innerHTML = html;
+}
+
+// ════ ПЕРЕМИКАЧ ВКЛАДОК СТРІЧКИ ════
+let currentFeedTab = 'new';
+
+function switchFeedTab(tab){
+  currentFeedTab = tab;
+
+  // Оновлюємо вкладки
+  ['new','active','history'].forEach(t => {
+    document.getElementById(`ftab-${t}`)?.classList.toggle('active', t === tab);
+  });
+
+  const feedScroll  = document.getElementById('feed-scroll');
+  const feedHistory = document.getElementById('feed-history');
+
+  if(tab === 'history'){
+    feedScroll.style.display  = 'none';
+    feedHistory.style.display = 'block';
+    renderHistory();
+  } else {
+    feedScroll.style.display  = '';
+    feedHistory.style.display = 'none';
+    renderFeedByTab(tab);
+  }
+}
+
+function renderFeedByTab(tab){
+  let markets;
+  if(tab === 'new'){
+    // Ринки без моїх ставок — відсортовані від нових
+    markets = D.filter(m => !myBets[m.id]);
+  } else if(tab === 'active'){
+    // Ринки де я вже зробив ставку і очікую результат
+    markets = D.filter(m => myBets[m.id] && !myBets[m.id].resolved);
+    if(markets.length === 0){
+      // Показуємо заглушку якщо немає активних
+      const fs = document.getElementById('feed-scroll');
+      fs.innerHTML = `
+        <div class="empty">
+          <div class="empty-ico">🔥</div>
+          <div class="empty-t">Немає активних ставок</div>
+          <div class="empty-s">Зроби ставку на вкладці "Нові"</div>
+          <button class="reload-btn" onclick="switchFeedTab('new')">🆕 До нових ринків</button>
+        </div>`;
+      return;
+    }
+  } else {
+    markets = D;
+  }
+
+  const fs   = document.getElementById('feed-scroll');
+  const feed = document.getElementById('s-feed');
+  const tb   = feed.querySelector('.tb');
+  const tabs = feed.querySelector('.feed-tabs');
+  const nav  = feed.querySelector('.bnav');
+  const h    = window.innerHeight - tb.offsetHeight - tabs.offsetHeight - nav.offsetHeight;
+  fs.style.height = h + 'px';
+  fs.innerHTML = '';
+  markets.forEach(m => fs.appendChild(makeFeedCard(m, h)));
+}
+
+// ════ GLOBAL UI ════
+function updBal(){
+  const f = gems.toLocaleString();
+  // ВИПРАВЛЕНО: використовуємо кешовані елементи замість getElementById кожного разу
+  BAL_ELS.forEach(el => { if(el) el.textContent = f; });
+  if(AIR_EL) AIR_EL.textContent = `${f} 💎 → ~${Math.round(gems/10).toLocaleString()} SORCL`;
+  if(LB_EL)  LB_EL.textContent  = f;
+  GAMES_ELS.forEach(el => { if(el) el.textContent = games; });
+  // Зберігаємо стан після кожної зміни балансу
+  saveState();
+}
+
+function toast(msg, bad=false){
+  haptic(bad ? 'error' : 'light');
+  const t  = document.getElementById('st');
+  const tm = document.getElementById('st-m');
+  tm.textContent = msg;
+  t.className = 'st' + (bad ? ' bad' : '') + ' show';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => {
+    t.style.opacity = '0';
+    setTimeout(() => { t.className = 'st' + (bad ? ' bad' : ''); t.style.opacity = ''; }, 200);
+  }, 2000); // 2 секунди
+}
+
+function go(page){
+  haptic('light');
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('s-'+page).classList.add('active');
+  // Оновлюємо активну кнопку навбару
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
+  const navMap = { home:'🏠', feed:'⚡', markets:'📊', leaders:'🏆', profile:'👤' };
+  if(navMap[page]){
+    document.querySelectorAll('.ni').forEach(n => {
+      if(n.querySelector('.ni-ic')?.textContent === navMap[page])
+        n.classList.add('active');
+    });
+  }
+  if(page==='markets')  { renderMCards(); switchMarketsTab('markets'); }
+  if(page==='home')     { renderHCards(); updateDailyUI(); renderMissions(); renderPath(); }
+  if(page==='feed')     { renderFeed(); switchFeedTab(currentFeedTab); updateMissionProgress('open_feed'); }
+  if(page==='create')   cfUpdate();
+  if(page==='path')     renderPath();
+  // challenge і duel — контент заповнюється окремо перед go()
+}
+
+// ════ CREATE MARKET ════
+let cfState = {
+  q: '', sub: '', room: 'ua', icon: '₿',
+  deadline: '1г 00:00', side: 'yes', amount: 100
+};
+
+function cfUpdate(){
+  const q = document.getElementById('cf-q').value.trim();
+  const sub = document.getElementById('cf-sub').value.trim();
+  cfState.q = q;
+  cfState.sub = sub;
+  document.getElementById('cf-qlen').textContent = q.length;
+
+  // Preview
+  document.getElementById('cpv-icon').textContent = cfState.icon;
+  document.getElementById('cpv-q').textContent = q || 'Твоє питання з\'явиться тут...';
+  document.getElementById('cpv-yes').textContent = cfState.side==='yes'
+    ? `✅ YES — твоя ставка (${cfState.amount} 💎)`
+    : `✅ YES — чекає гравців`;
+  document.getElementById('cpv-no').textContent = cfState.side==='no'
+    ? `❌ NO — твоя ставка (${cfState.amount} 💎)`
+    : `❌ NO — чекає гравців`;
+
+  // Enable submit
+  const ok = q.length >= 10 && cfState.room && cfState.deadline;
+  const btn = document.getElementById('cf-submit');
+  const hint = document.getElementById('cf-submit-hint');
+  btn.disabled = !ok;
+  if(ok){
+    btn.textContent = `✏️ Опублікувати — ставка ${cfState.amount} 💎`;
+    hint.textContent = `Ринок з\'явиться після модерації (~15 хв)`;
+  } else {
+    btn.textContent = '✏️ Опублікувати ринок';
+    hint.textContent = q.length < 10
+      ? `Питання замало (мін. 10 символів)`
+      : 'Заповни питання, категорію та дедлайн';
+  }
+}
+
+function cfCat(btn){
+  document.querySelectorAll('.cf-cat').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  cfState.room = btn.dataset.room;
+  cfUpdate();
+}
+
+function cfIcon(btn){
+  document.querySelectorAll('.cf-icon').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  cfState.icon = btn.textContent;
+  cfUpdate();
+}
+
+function cfDL(btn){
+  document.querySelectorAll('.cf-dl').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  cfState.deadline = btn.dataset.val;
+  cfUpdate();
+}
+
+function cfSide(side){
+  cfState.side = side;
+  document.getElementById('cf-yes-btn').classList.toggle('active', side==='yes');
+  document.getElementById('cf-no-btn').classList.toggle('active', side==='no');
+  cfUpdate();
+}
+
+function cfAmount(btn, amount){
+  document.querySelectorAll('.cf-am').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  cfState.amount = amount;
+  cfUpdate();
+}
+
+function submitMarket(){
+  haptic('heavy');
+  if(gems < cfState.amount){
+    haptic('error');
+    toast(`Недостатньо монет! Потрібно ${cfState.amount} 💎`, true);
+    return;
+  }
+
+  // Списуємо монети (перша ставка)
+  gems -= cfState.amount;
+
+  // ВИПРАВЛЕНО: безпечний унікальний ID щоб не було дублікатів
+  const newId = D.reduce((max, m) => Math.max(max, m.id), -1) + 1;
+  const newMarket = {
+    id: newId,
+    room: cfState.room,
+    q: cfState.q.toUpperCase(),
+    sub: cfState.sub || 'Ринок створений гравцем',
+    poolYes: cfState.side==='yes' ? cfState.amount : 0,
+    poolNo:  cfState.side==='no'  ? cfState.amount : 0,
+    t: cfState.deadline,
+    tp: 'new',
+    bg: 'linear-gradient(160deg,#0a1a2a,#060a12)',
+    icon: cfState.icon,
+    isUserCreated: true,
+    creator: MY_USERNAME,
+  };
+  D.push(newMarket);
+  marketMap[newId] = newMarket; // ВИПРАВЛЕНО: додаємо в кеш
+
+  // Записуємо ставку автора
+  myBets[newId] = {
+    side: cfState.side,
+    amount: cfState.amount,
+    payout: cfState.amount, // буде перерахований коли з'являться опоненти
+    mult: 1.0,
+    isRefund: true, // поки немає другої сторони
+  };
+
+  updBal();
+  renderFeed();
+  renderHCards();
+  renderMCards();
+
+  // Показуємо успіх і переходимо на стрічку
+  haptic('success');
+  burst(0);
+  toast(`🎉 Ринок "${cfState.q.slice(0,30)}..." створено!`);
+  updateMissionProgress('create_market'); // місія
+
+  // Скидаємо форму
+  document.getElementById('cf-q').value = '';
+  document.getElementById('cf-sub').value = '';
+  cfState = {q:'',sub:'',room:'ua',icon:'₿',deadline:'1г 00:00',side:'yes',amount:100};
+  document.querySelectorAll('.cf-cat').forEach((b,i)=>{b.classList.toggle('active',i===0);});
+  document.querySelectorAll('.cf-icon').forEach((b,i)=>{b.classList.toggle('active',i===0);});
+  document.querySelectorAll('.cf-dl').forEach((b,i)=>{b.classList.toggle('active',i===0);});
+  document.querySelectorAll('.cf-am').forEach((b,i)=>{b.classList.toggle('active',i===0);});
+  cfUpdate();
+
+  setTimeout(()=>go('feed'), 800);
+}
+
+// ════ DUEL / CHALLENGE ENGINE ════
+
+// Список дуелей [{id, marketId, challenger, opponent, challengerSide, amount, status, createdAt}]
+const duels = [];
+// duelNextId тепер в STATE.duelNextId
+
+// Демо-дані: вже існуючі дуелі від інших гравців
+const DEMO_DUELS = [
+  { id:100, marketId:3, challenger:'@fox_ua',    opponent:'???',        challengerSide:'yes', amount:300, status:'pending', createdAt: new Date(Date.now()-3600000).toISOString() },
+  { id:101, marketId:6, challenger:'@oracle_pro', opponent:'@tiger88',  challengerSide:'yes', amount:500, status:'active',  createdAt: new Date(Date.now()-7200000).toISOString() },
+  { id:102, marketId:1, challenger:'@night_moon', opponent:'@eagle_eye',challengerSide:'no',  amount:200, status:'active',  createdAt: new Date(Date.now()-1800000).toISOString() },
+];
+duels.push(...DEMO_DUELS);
+
+/**
+ * Відправити виклик другу (Share через Telegram)
+ */
+function openChallengeSend(marketId){
+  haptic('heavy');
+  const m   = marketMap[marketId];
+  const bet = myBets[marketId];
+  if(!m || !bet){ toast('Спочатку зроби ставку!', true); return; }
+
+  // Створюємо дуель зі статусом pending
+  const duel = {
+    id:             duelNextId++,
+    marketId,
+    challenger:     MY_USERNAME,
+    opponent:       null,
+    challengerSide: bet.side,
+    amount:         bet.amount,
+    status:         'pending',
+    createdAt:      new Date().toISOString(),
+  };
+  duels.push(duel);
+
+  const sideEmoji = bet.side === 'yes' ? '✅ YES' : '❌ NO';
+  const shareText =
+    `🔮 Я поставив ${sideEmoji} на це\n\n` +
+    `${m.icon} ${m.q}\n\n` +
+    `Заб'ємось? 👇`;
+
+  // Telegram WebApp share
+  if(TG?.switchInlineQuery){
+    TG.switchInlineQuery(shareText);
+  } else if(TG?.openTelegramLink){
+    TG.openTelegramLink(`https://t.me/share/url?url=https://t.me/OracleX_Yas_or_No_bot&text=${encodeURIComponent(shareText)}`);
+  } else {
+    // Fallback для браузера — копіюємо в буфер
+    navigator.clipboard?.writeText(shareText).catch(()=>{});
+    toast('📋 Текст виклику скопійовано!');
+  }
+
+  // Показуємо підтвердження
+  setTimeout(()=>{
+    toast('🔥 Виклик відправлено! Чекай відповіді...');
+    renderBattles();
+    updateMissionProgress('challenge'); // місія виклику
+  }, 500);
+}
+
+/**
+ * Відкрити екран "Виклик від друга"
+ * (симулюємо отримання виклику)
+ */
+function openChallengeReceive(duelId){
+  haptic('medium');
+  const duel = duels.find(d => d.id === duelId);
+  if(!duel) return;
+  const m = marketMap[duel.marketId];
+  if(!m) return;
+
+  const oppSide     = duel.challengerSide === 'yes' ? 'NO' : 'YES';
+  const oppSideEmoji = duel.challengerSide === 'yes' ? '❌ NO' : '✅ YES';
+
+  document.getElementById('challenge-content').innerHTML = `
+    <div class="ch-title">⚔️ ВИКЛИК</div>
+    <div class="ch-avatar">${m.icon}</div>
+    <div class="ch-from">від <b style="color:#a78bfa">${duel.challenger}</b></div>
+    <div class="ch-question">${m.q}</div>
+    <div class="ch-bet-info">
+      ${duel.challenger} поставив <b>${duel.challengerSide === 'yes' ? '✅ YES' : '❌ NO'}</b> · <b>${duel.amount.toLocaleString()} 💎</b><br>
+      <span style="margin-top:4px;display:block;">Якщо приймеш — ставиш <b>${oppSideEmoji}</b> на <b>${duel.amount.toLocaleString()} 💎</b></span>
+    </div>
+    <div style="font-size:12px;color:var(--sub);">Переможець забере <b style="color:var(--gold2)">${Math.floor(duel.amount*2*0.98).toLocaleString()} 💎</b></div>
+    <div class="ch-actions">
+      <button class="ch-accept" onclick="acceptChallenge(${duelId})">👍 Прийняти</button>
+      <button class="ch-decline" onclick="declineChallenge(${duelId})">👎 Відмовитись</button>
+    </div>
+  `;
+  go('challenge');
+}
+
+/**
+ * Прийняти виклик
+ */
+function acceptChallenge(duelId){
+  haptic('heavy');
+  const duel = duels.find(d => d.id === duelId);
+  if(!duel) return;
+
+  // Перевіряємо баланс
+  if(gems < duel.amount){
+    haptic('error');
+    toast(`Недостатньо монет! Потрібно ${duel.amount} 💎`, true);
+    return;
+  }
+
+  // Списуємо монети і приймаємо виклик
+  gems -= duel.amount;
+  duel.opponent = MY_USERNAME;
+  duel.status   = 'active';
+
+  // Додаємо ставку в myBets
+  const oppSide = duel.challengerSide === 'yes' ? 'no' : 'yes';
+  const m       = marketMap[duel.marketId];
+  if(m && !myBets[duel.marketId]){
+    placeBet(duel.marketId, oppSide, duel.amount);
+  }
+
+  updBal();
+  haptic('success');
+  burst(0);
+  toast('⚔️ Виклик прийнято! Дуель розпочато!');
+  openDuel(duel.marketId);
+}
+
+/**
+ * Відхилити виклик
+ */
+function declineChallenge(duelId){
+  haptic('light');
+  const duel = duels.find(d => d.id === duelId);
+  if(duel) duel.status = 'declined';
+  toast('Виклик відхилено');
+  go('feed');
+}
+
+/**
+ * Відкрити екран активної дуелі
+ */
+function openDuel(marketId){
+  haptic('light');
+  const duel = duels.find(d => d.marketId === marketId && d.status === 'active');
+  const m    = marketMap[marketId];
+  if(!m) return;
+
+  // Якщо нема активної дуелі — показуємо список
+  if(!duel){ go('markets'); switchMarketsTab('battles'); return; }
+
+  const challenger = duel.challenger;
+  const opponent   = duel.opponent || '❓ Чекаємо...';
+  const cSide      = duel.challengerSide;
+  const oSide      = cSide === 'yes' ? 'no' : 'yes';
+  const pot        = Math.floor(duel.amount * 2 * 0.98);
+
+  document.getElementById('duel-content').innerHTML = `
+    <div class="duel-header">
+      <div class="duel-title">⚔️ АКТИВНА ДУЕЛЬ</div>
+      <div class="duel-vs">
+        <div class="duel-player">
+          <div class="duel-av yes-player">🧙‍♂️</div>
+          <div class="duel-name">${challenger}</div>
+          <div class="${cSide==='yes'?'duel-side-yes':'duel-side-no'}">${cSide==='yes'?'✅ YES':'❌ NO'}</div>
+          <div class="duel-amount">${duel.amount.toLocaleString()} 💎</div>
+        </div>
+        <div class="vs-badge">VS</div>
+        <div class="duel-player">
+          <div class="duel-av no-player">😎</div>
+          <div class="duel-name">${opponent}</div>
+          <div class="${oSide==='yes'?'duel-side-yes':'duel-side-no'}">${oSide==='yes'?'✅ YES':'❌ NO'}</div>
+          <div class="duel-amount">${duel.amount.toLocaleString()} 💎</div>
+        </div>
+      </div>
+    </div>
+    <div class="duel-question-box">
+      <div class="duel-q">${m.icon} ${m.q}</div>
+      <div class="duel-pool">Банк дуелі: <b>${pot.toLocaleString()} 💎</b></div>
+    </div>
+    <div class="duel-timer">
+      <div class="duel-timer-label">⏱ Закривається</div>
+      <div class="duel-timer-val">${m.t}</div>
+    </div>
+    <button class="duel-resolve-btn" onclick="resolveDuel(${duel.id})">⚡ Визначити переможця</button>
+    <div class="bpad"></div>
+  `;
+  go('duel');
+}
+
+/**
+ * Вирішити дуель (симуляція)
+ */
+function resolveDuel(duelId){
+  haptic('heavy');
+  const duel = duels.find(d => d.id === duelId);
+  if(!duel) return;
+
+  duel.status = 'resolved';
+  const won   = Math.random() > WIN_THRESHOLD;
+  const pot   = Math.floor(duel.amount * 2 * 0.98);
+
+  if(won){
+    gems += pot;
+    updBal();
+    haptic('success');
+    burst(pot - duel.amount);
+    toast(`🏆 ТИ ПЕРЕМІГ! +${(pot - duel.amount).toLocaleString()} 💎`);
+  } else {
+    haptic('error');
+    toast('❌ Суперник переміг цього разу...', true);
+  }
+
+  // Оновлюємо екран
+  const dc = document.getElementById('duel-content');
+  if(dc){
+    const winner = won ? MY_USERNAME : duel.challenger;
+    dc.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:24px;text-align:center;">
+        <div style="font-size:64px;">${won?'🏆':'💔'}</div>
+        <div style="font-family:var(--f-display);font-size:32px;font-weight:900;color:${won?'var(--g)':'var(--r)'};">${won?'ПЕРЕМОГА!':'ПОРАЗКА'}</div>
+        <div style="font-size:14px;color:var(--sub);">Переміг: <b style="color:var(--text)">${winner}</b></div>
+        ${won?`<div style="font-family:var(--f-display);font-size:24px;font-weight:800;color:var(--gold2);">+${(pot-duel.amount).toLocaleString()} 💎 прибуток</div>`:''}
+        <button onclick="go('feed')" style="margin-top:12px;padding:14px 32px;border-radius:var(--r-btn);border:none;cursor:pointer;background:var(--card);border:1px solid var(--b2);color:var(--text);font-family:var(--f-display);font-size:16px;font-weight:800;">← Назад</button>
+        <button onclick="openChallengeReceive(${DEMO_DUELS[0].id})" style="padding:14px 32px;border-radius:var(--r-btn);border:none;cursor:pointer;background:linear-gradient(135deg,rgba(139,92,246,.3),rgba(139,92,246,.1));border:1px solid rgba(139,92,246,.4);color:#a78bfa;font-family:var(--f-display);font-size:16px;font-weight:800;">🔥 Ще один виклик!</button>
+      </div>
+    `;
+  }
+}
+
+/**
+ * Перемикач вкладок Markets/Battles
+ */
+function switchMarketsTab(tab){
+  const isMarkets = tab === 'markets';
+  document.getElementById('mtab-markets').classList.toggle('active', isMarkets);
+  document.getElementById('mtab-battles').classList.toggle('active', !isMarkets);
+  document.getElementById('mfilters').style.display  = isMarkets ? 'flex' : 'none';
+  document.getElementById('mcards').style.display    = isMarkets ? 'block' : 'none';
+  document.getElementById('battles-list').style.display = isMarkets ? 'none' : 'flex';
+  if(!isMarkets) renderBattles();
+}
+
+/**
+ * Рендер списку батлів
+ */
+function renderBattles(){
+  const el = document.getElementById('battles-list');
+  if(!el) return;
+
+  const allDuels = [...duels].sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt));
+
+  if(!allDuels.length){
+    el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--sub);">
+      <div style="font-size:48px;margin-bottom:12px;">⚔️</div>
+      <div style="font-family:var(--f-display);font-size:20px;font-weight:800;margin-bottom:6px;">Ще немає батлів</div>
+      <div style="font-size:12px;">Зроби ставку і кинь виклик другу!</div>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = allDuels.map(d => {
+    const m = marketMap[d.marketId];
+    if(!m) return '';
+    const statusLabel = {pending:'⏳ Очікує', active:'🔥 Активна', resolved:'✅ Завершено', declined:'❌ Відхилено'}[d.status] || d.status;
+    const statusCls   = {pending:'bs-pending', active:'bs-active', resolved:'bs-done', declined:'bs-done'}[d.status] || 'bs-done';
+    const cardCls     = {pending:'pending', active:'active-duel'}[d.status] || '';
+    const opponent    = d.opponent || '???';
+    const pot         = Math.floor(d.amount * 2 * 0.98);
+    const isMyDuel    = d.challenger === MY_USERNAME || d.opponent === MY_USERNAME;
+
+    return `
+      <div class="battle-card ${cardCls}" onclick="${d.status==='pending' && !isMyDuel ? `openChallengeReceive(${d.id})` : d.status==='active' ? `openDuel(${d.marketId})` : ''}">
+        <div class="battle-top">
+          <div class="battle-players">${d.challenger} <span style="color:var(--sub)">vs</span> ${opponent}</div>
+          <div class="battle-status ${statusCls}">${statusLabel}</div>
+        </div>
+        <div class="battle-q">${m.icon} ${m.q}</div>
+        <div class="battle-bottom">
+          <div class="battle-sides">
+            <span class="battle-yes">✅ ${d.challengerSide==='yes'?d.challenger:opponent}</span>
+            <span style="color:var(--sub)">vs</span>
+            <span class="battle-no">❌ ${d.challengerSide==='no'?d.challenger:opponent}</span>
+          </div>
+          <div class="battle-pot">🏆 ${pot.toLocaleString()} 💎</div>
+        </div>
+        ${d.status==='pending' && !isMyDuel ? `<div style="text-align:center;font-size:11px;color:#a78bfa;font-weight:700;margin-top:2px;">👆 Натисни щоб прийняти виклик</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+// ════ MARKETS TAB SWITCH ════
+// Init Telegram WebApp if available
+if(TG){ TG.ready(); TG.expand(); }
+
+// ── Кешуємо DOM елементи балансу один раз ──
+const BAL_ELS   = ['b1','b2','b3','pb'].map(id=>document.getElementById(id)).filter(Boolean);
+const GAMES_ELS = ['pg','h-games','lb-g'].map(id=>document.getElementById(id)).filter(Boolean);
+const AIR_EL    = document.getElementById('air-b');
+const LB_EL     = document.getElementById('lb-b');
+
+// ── Швидкий доступ до ринків O(1) замість D.find() O(n) ──
+const marketMap = {};
+D.forEach(m => { marketMap[m.id] = m; });
+
+// ── Debounce щоб renderFeed не спрацьовував при кожному пікселі ──
+function debounce(fn, ms){
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(()=>fn(...args), ms); };
+}
+window.addEventListener('resize', debounce(renderFeed, 150));
+
+// ── localStorage: зберігаємо стан між сесіями ──
+// ══════════════════════════════════════════
+// STORAGE — версіонований localStorage
+// При зміні структури — збільшуй STORAGE_VERSION
+// і додавай міграцію в loadState()
+// ══════════════════════════════════════════
+const STORAGE_KEY     = 'oraclex_state';
+const STORAGE_VERSION = 2; // ← збільшуй при зміні структури
+
+function saveState(){
+  try {
+    const payload = {
+      version: STORAGE_VERSION,
+      gems, myBets, games, streak,
+      savedAt: Date.now(),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  } catch(e) {
+    // localStorage недоступний (Telegram WebApp, приватний режим)
+    console.warn('OracleX: saveState failed', e.message);
+  }
+}
+
+function loadState(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+
+    const data = JSON.parse(raw);
+
+    // Міграція: старий формат v1 (без version поля)
+    if(!data.version || data.version < STORAGE_VERSION){
+      console.info('OracleX: міграція стану з v' + (data.version||1) + ' → v' + STORAGE_VERSION);
+      localStorage.removeItem(STORAGE_KEY); // скидаємо старий стан
+      return;
+    }
+
+    // Завантажуємо дані
+    if(typeof data.gems   === 'number') gems   = data.gems;
+    if(typeof data.games  === 'number') games  = data.games;
+    if(typeof data.streak === 'number') streak = data.streak;
+    if(data.myBets && typeof data.myBets === 'object'){
+      Object.assign(myBets, data.myBets);
+    }
+  } catch(e) {
+    console.warn('OracleX: loadState failed', e.message);
+    localStorage.removeItem(STORAGE_KEY); // пошкоджені дані — скидаємо
+  }
+}
+
+// Завантажуємо збережений стан
+loadState();
+
+// Зберігаємо при кожній ставці і виході
+window.addEventListener('beforeunload', saveState);
+
+// Запуск
+renderFeed();
+renderHCards();
+renderMissions();        // місії дня
+renderPath();            // шлях провісника
+updateDailyUI();         // оновлюємо стан щоденної нагороди
+switchFeedTab('new');    // початкова вкладка стрічки
+</script>
+</body>
+</html>
