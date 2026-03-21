@@ -4,21 +4,21 @@
   "description": "OracleX — Bot + API Server для 1000+ гравців",
   "main": "src/index.js",
   "scripts": {
-    "start":  "node src/index.js",
-    "dev":    "nodemon src/index.js",
-    "test":   "node src/test.js"
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "node src/test.js"
   },
   "dependencies": {
-    "telegraf":              "^4.16.3",
-    "node-cron":             "^3.0.3",
     "@google/generative-ai": "^0.7.1",
-    "axios":                 "^1.6.7",
-    "pg":                    "^8.11.3",
-    "dotenv":                "^16.4.4",
-    "winston":               "^3.11.0",
-    "express":               "^4.18.2",
-    "cors":                  "^2.8.5",
-    "crypto":                "^1.0.1"
+    "axios": "^1.6.7",
+    "cors": "^2.8.6",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.4.4",
+    "express": "^4.22.1",
+    "node-cron": "^3.0.3",
+    "pg": "^8.11.3",
+    "telegraf": "^4.16.3",
+    "winston": "^3.11.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
