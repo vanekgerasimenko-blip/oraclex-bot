@@ -1,24 +1,26 @@
 {
-      "name": "oraclex-bot",
-        "version": "1.0.0",
-          "description": "OracleX — Daily Market Generator & Oracle Verifier (Gemini)",
-            "main": "src/index.js",
-              "scripts": {
-                  "start": "node src/index.js",
-                      "dev": "nodemon src/index.js",
-                          "test": "node src/test.js"
-                            },
-                              "dependencies": {
-                                  "telegraf": "^4.16.3",
-                                      "node-cron": "^3.0.3",
-                                          "@google/generative-ai": "^0.7.1",
-                                              "axios": "^1.6.7",
-                                                  "pg": "^8.11.3",
-                                                      "dotenv": "^16.4.4",
-                                                          "winston": "^3.11.0"
-                                                            },
-                                                              "devDependencies": {
-                                                                  "nodemon": "^3.1.0"
-                                                                    }
-                                                                    }
-                                
+  "name": "oraclex-bot",
+  "version": "2.0.0",
+  "description": "OracleX — Bot + API Server для 1000+ гравців",
+  "main": "src/index.js",
+  "scripts": {
+    "start":  "node src/index.js",
+    "dev":    "nodemon src/index.js",
+    "test":   "node src/test.js"
+  },
+  "dependencies": {
+    "telegraf":              "^4.16.3",
+    "node-cron":             "^3.0.3",
+    "@google/generative-ai": "^0.7.1",
+    "axios":                 "^1.6.7",
+    "pg":                    "^8.11.3",
+    "dotenv":                "^16.4.4",
+    "winston":               "^3.11.0",
+    "express":               "^4.18.2",
+    "cors":                  "^2.8.5",
+    "crypto":                "^1.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}
