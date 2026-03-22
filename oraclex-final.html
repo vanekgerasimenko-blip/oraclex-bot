@@ -602,8 +602,155 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   FEED TABS
+   BTC LIVE + MARKET DETAIL
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.live-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:#ff3057;
+  box-shadow:0 0 8px rgba(255,48,87,.8);
+  animation:livePulse 1s ease-in-out infinite;
+}
+@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
+
+/* Велика ціна */
+.btc-price-big{
+  font-family:var(--f-display);
+  font-size:42px;font-weight:900;
+  line-height:1;letter-spacing:-1px;
+}
+.btc-price-change{
+  font-family:var(--f-display);
+  font-size:16px;font-weight:800;
+  padding:3px 10px;border-radius:8px;
+}
+.btc-price-change.up{background:rgba(0,229,160,.15);color:var(--g);}
+.btc-price-change.down{background:rgba(255,48,87,.15);color:var(--r);}
+
+/* Таймер */
+.btc-timer{
+  font-family:var(--f-display);
+  font-size:28px;font-weight:900;
+  letter-spacing:2px;
+}
+.btc-timer.urgent{color:var(--r);animation:timerPulse .5s ease-in-out infinite;}
+@keyframes timerPulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* Canvas графік */
+.btc-chart-wrap{
+  position:relative;
+  background:rgba(255,255,255,.02);
+  border:1px solid var(--b2);
+  border-radius:14px;
+  overflow:hidden;
+  margin:0 14px 12px;
+}
+#btc-chart{width:100%;display:block;}
+
+/* Target line label */
+.chart-target-label{
+  position:absolute;right:8px;
+  font-size:10px;font-weight:700;
+  color:var(--gold2);
+  background:rgba(6,10,18,.8);
+  padding:2px 6px;border-radius:4px;
+  border:1px solid rgba(255,184,0,.3);
+}
+
+/* BTC кнопки */
+.btc-bet-row{
+  display:flex;gap:10px;
+  padding:0 14px 12px;
+}
+.btc-up-btn{
+  flex:1;padding:16px 8px;border-radius:var(--r-btn);border:none;cursor:pointer;
+  background:linear-gradient(135deg,#005533,#009960);
+  color:#fff;font-family:var(--f-display);
+  font-size:20px;font-weight:900;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  box-shadow:var(--glow-g);transition:all .15s;
+}
+.btc-down-btn{
+  flex:1;padding:16px 8px;border-radius:var(--r-btn);border:none;cursor:pointer;
+  background:linear-gradient(135deg,#770020,#bb1a36);
+  color:#fff;font-family:var(--f-display);
+  font-size:20px;font-weight:900;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  box-shadow:var(--glow-r);transition:all .15s;
+}
+.btc-up-btn:active,.btc-down-btn:active{transform:scale(.96);}
+.btc-btn-price{font-size:11px;opacity:.8;font-weight:600;font-family:var(--f-body);}
+
+/* ── MARKET DETAIL ── */
+.md-header{
+  padding:16px;
+  background:var(--card);
+  border-bottom:1px solid var(--b2);
+}
+.md-question{
+  font-family:var(--f-display);
+  font-size:22px;font-weight:900;
+  line-height:1.2;margin-bottom:8px;
+}
+.md-meta{
+  display:flex;gap:8px;flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.md-tag{
+  font-size:10px;font-weight:700;
+  padding:3px 8px;border-radius:6px;
+  background:rgba(255,255,255,.06);
+  border:1px solid var(--b2);
+  color:var(--sub);
+}
+.md-pool-big{
+  display:flex;gap:10px;margin-bottom:10px;
+}
+.md-pool-side{
+  flex:1;padding:12px;border-radius:12px;text-align:center;
+}
+.md-pool-side.yes{background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.2);}
+.md-pool-side.no{background:rgba(255,48,87,.08);border:1px solid rgba(255,48,87,.2);}
+.md-pool-pct{
+  font-family:var(--f-display);font-size:28px;font-weight:900;
+  line-height:1;
+}
+.md-pool-side.yes .md-pool-pct{color:var(--g);}
+.md-pool-side.no  .md-pool-pct{color:var(--r);}
+.md-pool-label{font-size:11px;color:var(--sub);margin-top:4px;}
+.md-pool-gems{font-family:var(--f-display);font-size:13px;font-weight:700;color:var(--gold2);}
+
+/* Активність / ставки */
+.md-bets-list{
+  padding:12px 14px;display:flex;flex-direction:column;gap:8px;
+}
+.md-bet-row{
+  display:flex;align-items:center;gap:10px;
+  background:var(--card);border:1px solid var(--b2);
+  border-radius:11px;padding:10px 12px;
+}
+.md-bet-av{font-size:20px;}
+.md-bet-info{flex:1;}
+.md-bet-user{font-size:13px;font-weight:700;}
+.md-bet-side{font-size:11px;color:var(--sub);margin-top:2px;}
+.md-bet-amount{font-family:var(--f-display);font-size:14px;font-weight:800;color:var(--gold2);}
+
+/* Stats рядок */
+.md-stats{
+  display:flex;gap:0;
+  border-top:1px solid var(--b2);
+  border-bottom:1px solid var(--b2);
+  margin-bottom:12px;
+}
+.md-stat{
+  flex:1;padding:12px;text-align:center;
+  border-right:1px solid var(--b2);
+}
+.md-stat:last-child{border-right:none;}
+.md-stat-val{
+  font-family:var(--f-display);font-size:18px;font-weight:900;
+  color:var(--text);
+}
+.md-stat-lbl{font-size:10px;color:var(--sub);margin-top:2px;}
 .feed-tabs{
   display:flex;gap:0;flex-shrink:0;
   background:rgba(6,10,18,.9);
@@ -1336,6 +1483,16 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <div style="font-family:var(--f-display);font-size:14px;font-weight:800;color:var(--gold2);" id="path-home-reward">до 3,500 💎</div>
     </div>
 
+    <!-- BTC LIVE -->
+    <div onclick="go('btclive')" style="margin:0 14px 12px;background:linear-gradient(135deg,rgba(247,147,26,.12),rgba(247,147,26,.04));border:1px solid rgba(247,147,26,.25);border-radius:16px;padding:14px;cursor:pointer;display:flex;align-items:center;gap:12px;">
+      <div style="font-size:32px;">₿</div>
+      <div style="flex:1;">
+        <div style="font-family:var(--f-display);font-size:17px;font-weight:800;color:#f7931a;display:flex;align-items:center;gap:6px;">BTC Live <div class="live-dot"></div></div>
+        <div style="font-size:11px;color:var(--sub);margin-top:2px;">Реалтайм ціна · Раунди 5хв</div>
+      </div>
+      <div style="font-family:var(--f-display);font-size:14px;font-weight:800;color:var(--gold2);">ГРАТИ</div>
+    </div>
+
     <div class="stats">
       <div class="sbox"><div class="sv2 g">71%</div><div class="sl">Win Rate</div></div>
       <div class="sbox"><div class="sv2 gold">#47</div><div class="sl">Рейтинг</div></div>
@@ -1751,6 +1908,51 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   </nav>
 </div>
 
+<!-- ══════ BTC LIVE SCREEN ══════ -->
+<div class="screen" id="s-btclive">
+  <div class="tb">
+    <div class="back-btn" onclick="go('feed')">‹</div>
+    <div class="tb-title" style="display:flex;align-items:center;gap:8px;">
+      <span style="color:#f7931a;">₿</span> BTC LIVE
+      <div class="live-dot"></div>
+    </div>
+    <div class="bal-pill" style="padding:4px 10px;"><span class="bal-n" style="font-size:15px;" id="btc-bal">12,500</span> 💎</div>
+  </div>
+  <div class="sc" id="btclive-content">
+    <!-- Заповнюється JS -->
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:12px;">
+      <div style="font-size:32px;animation:bob .8s ease-in-out infinite alternate;">₿</div>
+      <div style="font-family:var(--f-display);font-size:16px;color:var(--sub);">Підключення до Binance...</div>
+    </div>
+  </div>
+  <nav class="bnav">
+    <div class="ni" onclick="go('home')"><div class="ni-ic">🏠</div><div class="ni-lb">Головна</div></div>
+    <div class="ni" onclick="go('feed')"><div class="ni-ic">⚡</div><div class="ni-lb">Стрічка</div></div>
+    <div class="ni-create" onclick="go('create')"><div class="ni-create-circle">＋</div><div class="ni-create-lb">Створити</div></div>
+    <div class="ni" onclick="go('markets')"><div class="ni-ic">📊</div><div class="ni-lb">Ринки</div></div>
+    <div class="ni" onclick="go('profile')"><div class="ni-ic">👤</div><div class="ni-lb">Профіль</div></div>
+  </nav>
+</div>
+
+<!-- ══════ MARKET DETAIL SCREEN ══════ -->
+<div class="screen" id="s-market-detail">
+  <div class="tb">
+    <div class="back-btn" id="market-detail-back" onclick="go('feed')">‹</div>
+    <div class="tb-title" id="market-detail-title">РИНОК</div>
+    <div style="width:34px;"></div>
+  </div>
+  <div class="sc" id="market-detail-content">
+    <!-- Заповнюється через openMarketDetail(id) -->
+  </div>
+  <nav class="bnav">
+    <div class="ni" onclick="go('home')"><div class="ni-ic">🏠</div><div class="ni-lb">Головна</div></div>
+    <div class="ni" onclick="go('feed')"><div class="ni-ic">⚡</div><div class="ni-lb">Стрічка</div></div>
+    <div class="ni-create" onclick="go('create')"><div class="ni-create-circle">＋</div><div class="ni-create-lb">Створити</div></div>
+    <div class="ni" onclick="go('markets')"><div class="ni-ic">📊</div><div class="ni-lb">Ринки</div></div>
+    <div class="ni" onclick="go('profile')"><div class="ni-ic">👤</div><div class="ni-lb">Профіль</div></div>
+  </nav>
+</div>
+
 <!-- OVERLAYS -->
 <div class="st" id="st"><div class="st-inner" id="st-m">🔥</div></div>
 
@@ -2057,6 +2259,15 @@ function makeFeedCard(m, h){
       </div>
       </div><!-- /sb-content -->
     </div><!-- /sb -->
+    <!-- Кнопка деталей -->
+    <button onclick="openMarketDetail(${m.id},'feed')" style="
+      position:absolute;top:12px;right:12px;z-index:10;
+      background:rgba(12,21,34,.7);backdrop-filter:blur(8px);
+      border:1px solid rgba(255,255,255,.12);border-radius:9px;
+      padding:5px 10px;color:var(--sub);
+      font-size:11px;font-weight:700;cursor:pointer;
+      font-family:var(--f-display);
+    ">📊 Детально</button>
     ${m===D[0]?'<div class="scroll-hint"><div class="sh-arrow">👇</div><div>Гортай вниз</div></div>':''}
   `;
   return el;
@@ -2277,7 +2488,7 @@ function buildCard(m){
   const pyNo =calcPayout(m,'no', selectedBet);
   return`<div class="pcard" style="position:relative;">
     <span class="ptag ${tagCls[m.tp]}">${TAG_L[m.tp]}</span>
-    <div class="pcb">
+    <div class="pcb" onclick="openMarketDetail(${m.id},'markets')" style="cursor:pointer;">
       <div class="pcm"><div class="pcc">${m.icon}</div><div class="pcq">${m.q}</div></div>
       <div class="pcs">${m.sub}</div>
       <!-- POOL -->
@@ -2290,7 +2501,7 @@ function buildCard(m){
           <div class="pool-lbl-yes" style="gap:4px;"><span class="pool-pct-y" style="font-size:12px;">✅ ${pct}%</span><span class="pool-sum">${fmtPool(m.poolYes)} 💎</span></div>
           <div class="pool-lbl-no"  style="gap:4px;"><span class="pool-sum">${fmtPool(m.poolNo)} 💎</span><span class="pool-pct-n" style="font-size:12px;">❌ ${noPct}%</span></div>
         </div>
-        <div class="pool-total" style="font-size:9px;">Пул: <b>${fmtPool(tot)} 💎</b> </div>
+        <div class="pool-total" style="font-size:9px;">Пул: <b>${fmtPool(tot)} 💎</b></div>
       </div>
     </div>
     ${bet
@@ -2300,7 +2511,11 @@ function buildCard(m){
           <button class="yb no-b"  onclick="tapCard(${m.id},'no', event)">BUY NO<span class="ys">${pyNo.isRefund?'↩ поверн.':`x${pyNo.mult}`}</span></button>
         </div>`
     }
-    <div class="timer-row2"><div class="tv">⏱ ${m.t}</div><div class="ch" onclick="doResolve(${m.id})">⚡ Результат</div></div>
+    <div class="timer-row2">
+      <div class="tv">⏱ ${m.t}</div>
+      <div class="ch" onclick="openMarketDetail(${m.id},'markets')" style="color:var(--blue);">📊 Детально</div>
+      <div class="ch" onclick="doResolve(${m.id})">⚡ Результат</div>
+    </div>
   </div>`;
 }
 
@@ -2839,6 +3054,316 @@ function makePathBet(marketId, side){
   updateMissionProgress(`room_${m.room}`);
 }
 
+// ════════════════════════════════════════
+//  BTC LIVE — WebSocket клієнт (Binance)
+// ════════════════════════════════════════
+
+const BINANCE_WS = 'wss://stream.binance.com:9443/ws/btcusdt@trade';
+
+let btcWS         = null;
+let btcPrice      = null;
+let btcTarget     = null;
+let btcRoundEnd   = null;
+let btcHistory    = [];
+let btcTimerInt   = null;
+let btcBetPlaced  = false;
+let btcBetSide    = null;
+
+function connectBTCLive() {
+  if (btcWS) { try { btcWS.close(); } catch{} btcWS = null; }
+  btcWS = new WebSocket(BINANCE_WS);
+
+  btcWS.onopen  = () => updateBTCStatus('🟢 Підключено до Binance');
+  btcWS.onerror = () => updateBTCStatus('🔴 Помилка з\'єднання');
+  btcWS.onclose = () => {
+    updateBTCStatus('🟡 Перепідключення...');
+    setTimeout(connectBTCLive, 3000);
+  };
+  btcWS.onmessage = (e) => {
+    try {
+      const data  = JSON.parse(e.data);
+      const price = parseFloat(data.p);
+      if (!price) return;
+      btcPrice = price;
+      btcHistory.push({ price, ts: data.T });
+      if (btcHistory.length > 300) btcHistory.shift();
+      if (!btcTarget) startBTCRound();
+      updateBTCDisplay();
+      drawBTCChart();
+    } catch {}
+  };
+}
+
+function startBTCRound() {
+  if (!btcPrice) return;
+  btcTarget    = btcPrice;
+  btcRoundEnd  = Date.now() + 5 * 60 * 1000;
+  btcBetPlaced = false;
+  btcBetSide   = null;
+  btcHistory   = [{ price: btcPrice, ts: Date.now() }];
+  if (btcTimerInt) clearInterval(btcTimerInt);
+  btcTimerInt  = setInterval(updateBTCTimer, 500);
+  updateBTCRoundUI();
+}
+
+function endBTCRound() {
+  const isUp    = btcPrice > btcTarget;
+  const isWin   = btcBetSide === 'up' ? isUp : btcBetSide === 'down' ? !isUp : null;
+  const resultEl = document.getElementById('btc-round-result');
+  if (resultEl) {
+    resultEl.style.display = 'flex';
+    resultEl.innerHTML = `
+      <div style="font-family:var(--f-display);font-size:28px;font-weight:900;color:${isUp?'var(--g)':'var(--r)'};">${isUp?'UP ↑':'DOWN ↓'}</div>
+      ${btcBetPlaced ? `<div style="font-size:14px;color:${isWin?'var(--g)':'var(--r)'};">${isWin?'🎯 Ти вгадав!':'❌ Не вгадав'}</div>` : ''}
+      <div style="font-size:12px;color:var(--sub);">Новий раунд за 3с...</div>`;
+  }
+  setTimeout(() => {
+    btcTarget = null; btcRoundEnd = null; btcBetPlaced = false; btcBetSide = null;
+    if (resultEl) resultEl.style.display = 'none';
+    startBTCRound();
+  }, 3000);
+}
+
+function updateBTCTimer() {
+  const el       = document.getElementById('btc-timer');
+  const timeLeft = Math.max(0, (btcRoundEnd||Date.now()) - Date.now());
+  if (!el) return;
+  const m = Math.floor(timeLeft/60000);
+  const s = Math.floor((timeLeft%60000)/1000);
+  el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  el.className   = `btc-timer${timeLeft < 30000 ? ' urgent' : ''}`;
+  if (timeLeft <= 0) { clearInterval(btcTimerInt); endBTCRound(); }
+}
+
+function updateBTCDisplay() {
+  const priceEl  = document.getElementById('btc-price-val');
+  const changeEl = document.getElementById('btc-price-change');
+  if (!priceEl || !btcPrice) return;
+  priceEl.textContent = '$' + btcPrice.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if (btcTarget && changeEl) {
+    const diff = btcPrice - btcTarget;
+    const pct  = (diff/btcTarget*100).toFixed(3);
+    const isUp = diff >= 0;
+    changeEl.textContent = `${isUp?'+':''}${diff.toFixed(2)} (${isUp?'+':''}${pct}%)`;
+    changeEl.className   = `btc-price-change ${isUp?'up':'down'}`;
+    priceEl.style.color  = isUp ? 'var(--g)' : 'var(--r)';
+  }
+  updateBTCButtons();
+}
+
+function updateBTCRoundUI() {
+  const el = document.getElementById('btc-target-price');
+  if (el && btcTarget) el.textContent = '$' + btcTarget.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function updateBTCButtons() {
+  const upBtn = document.getElementById('btc-up-btn');
+  const dnBtn = document.getElementById('btc-down-btn');
+  if (!upBtn || !dnBtn) return;
+  const upPct = btcPrice > (btcTarget||btcPrice) ? 52 : 48;
+  const dnPct = 100 - upPct;
+  upBtn.querySelector('.btc-btn-price').textContent = `${upPct}¢ · x${(100/upPct).toFixed(2)}`;
+  dnBtn.querySelector('.btc-btn-price').textContent = `${dnPct}¢ · x${(100/dnPct).toFixed(2)}`;
+  if (btcBetPlaced) {
+    upBtn.disabled = dnBtn.disabled = true;
+    upBtn.style.opacity = btcBetSide==='up'  ? '1' : '0.4';
+    dnBtn.style.opacity = btcBetSide==='down'? '1' : '0.4';
+  }
+}
+
+function placeBTCBet(side) {
+  if (btcBetPlaced) { toast('Вже є ставка!', true); return; }
+  if (gems < selectedBet) { toast('Недостатньо монет!', true); return; }
+  haptic('heavy');
+  gems -= selectedBet; btcBetPlaced = true; btcBetSide = side;
+  updBal();
+  toast(`✅ Ставка ${selectedBet} 💎 на BTC ${side==='up'?'↑ UP':'↓ DOWN'}`);
+  updateBTCButtons();
+  updateMissionProgress('bets');
+  updateMissionProgress('room_crypto');
+}
+
+function updateBTCStatus(msg) {
+  const el = document.getElementById('btc-status');
+  if (el) el.textContent = msg;
+}
+
+function drawBTCChart() {
+  const canvas = document.getElementById('btc-chart');
+  if (!canvas || btcHistory.length < 2) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width = canvas.offsetWidth;
+  const H = canvas.height = 160;
+  ctx.clearRect(0,0,W,H);
+  const prices = btcHistory.map(p=>p.price);
+  const minP = Math.min(...prices)-5, maxP = Math.max(...prices)+5;
+  const range = maxP-minP||1;
+  const toX = i => (i/(btcHistory.length-1))*W;
+  const toY = p => H-((p-minP)/range)*(H-20)-10;
+  // Target line
+  if (btcTarget) {
+    const ty = toY(btcTarget);
+    ctx.setLineDash([4,4]); ctx.strokeStyle='rgba(255,184,0,.6)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,ty); ctx.lineTo(W,ty); ctx.stroke();
+    ctx.setLineDash([]);
+    const lbl = document.querySelector('.chart-target-label');
+    if (lbl) lbl.style.top = Math.max(4,ty-12)+'px';
+  }
+  const isUp = btcPrice>=(btcTarget||btcPrice);
+  const color = isUp ? '#00e5a0' : '#ff3057';
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0, isUp?'rgba(0,229,160,.2)':'rgba(255,48,87,.2)');
+  grad.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.beginPath();
+  btcHistory.forEach((p,i)=>{ const x=toX(i),y=toY(p.price); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+  ctx.lineTo(toX(btcHistory.length-1),H); ctx.lineTo(0,H); ctx.closePath();
+  ctx.fillStyle=grad; ctx.fill();
+  ctx.beginPath();
+  btcHistory.forEach((p,i)=>{ const x=toX(i),y=toY(p.price); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+  ctx.strokeStyle=color; ctx.lineWidth=2; ctx.stroke();
+  ctx.beginPath(); ctx.arc(toX(btcHistory.length-1),toY(btcPrice),4,0,Math.PI*2);
+  ctx.fillStyle=color; ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
+}
+
+function renderBTCLive() {
+  const el = document.getElementById('btclive-content');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="padding:16px 14px 8px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <div style="font-size:11px;color:var(--sub);" id="btc-status">🟡 Підключення...</div>
+        <div style="font-size:11px;color:var(--sub);">Binance • реалтайм</div>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px;">
+        <div class="btc-price-big" id="btc-price-val" style="color:var(--g);">$--,---</div>
+        <div class="btc-price-change up" id="btc-price-change">+0.00 (0.000%)</div>
+      </div>
+      <div style="font-size:12px;color:var(--sub);">Ціль: <b style="color:var(--gold2);" id="btc-target-price">очікування...</b></div>
+    </div>
+    <div style="margin:0 14px 10px;background:rgba(255,255,255,.04);border:1px solid var(--b2);border-radius:14px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:11px;color:var(--sub);margin-bottom:2px;">⏱ До кінця раунду</div>
+        <div class="btc-timer" id="btc-timer">05:00</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px;color:var(--sub);margin-bottom:2px;">Тип</div>
+        <div style="font-family:var(--f-display);font-size:16px;font-weight:800;color:#a78bfa;">BTC 5M</div>
+      </div>
+    </div>
+    <div id="btc-round-result" style="display:none;margin:0 14px 10px;background:rgba(255,255,255,.05);border:1px solid var(--b2);border-radius:14px;padding:16px;flex-direction:column;align-items:center;gap:6px;text-align:center;"></div>
+    <div class="btc-chart-wrap" style="height:180px;">
+      <canvas id="btc-chart" style="width:100%;height:160px;"></canvas>
+      <div class="chart-target-label" style="top:50%;">← Ціль</div>
+    </div>
+    <div class="bet-size-row" style="padding:0 14px 10px;">
+      <span class="bet-label">Ставка:</span>
+      ${[50,100,500,1000].map(v=>`<button class="bet-chip${v===selectedBet?' bc-active':''}" onclick="selectedBet=${v};document.querySelectorAll('.bet-chip').forEach(b=>b.classList.toggle('bc-active',+b.textContent===${v}))">${v}</button>`).join('')}
+      <span class="bet-bal">Баланс: <b>${gems.toLocaleString()}</b> 💎</span>
+    </div>
+    <div class="btc-bet-row">
+      <button class="btc-up-btn" id="btc-up-btn" onclick="placeBTCBet('up')">↑ BUY UP<span class="btc-btn-price">50¢ · x2.00</span></button>
+      <button class="btc-down-btn" id="btc-down-btn" onclick="placeBTCBet('down')">↓ BUY DOWN<span class="btc-btn-price">50¢ · x2.00</span></button>
+    </div>
+    <div style="margin:0 14px;padding:10px 14px;background:rgba(247,147,26,.06);border:1px solid rgba(247,147,26,.15);border-radius:12px;font-size:11px;color:var(--sub);line-height:1.6;">
+      💡 Постав чи BTC буде <b style="color:var(--g);">вище</b> або <b style="color:var(--r);">нижче</b> від стартової ціні через 5 хвилин. Переможці ділять пул між собою.
+    </div>
+    <div class="bpad"></div>`;
+  connectBTCLive();
+  const ci = setInterval(()=>{ document.getElementById('s-btclive')?.classList.contains('active') ? drawBTCChart() : clearInterval(ci); }, 500);
+}
+
+// ════════════════════════════════════════
+//  MARKET DETAIL — повна сторінка ринку
+// ════════════════════════════════════════
+
+function openMarketDetail(marketId, fromPage) {
+  haptic('light');
+  const m = marketMap[marketId];
+  if (!m) return;
+  document.getElementById('market-detail-back').onclick = () => go(fromPage || 'feed');
+  document.getElementById('market-detail-title').textContent = m.icon + ' ' + (RL[m.room]||m.room).toUpperCase();
+
+  const pct   = yesPct(m);
+  const noPct = 100 - pct;
+  const tot   = totalPool(m);
+  const bet   = myBets[marketId];
+  const pyYes = calcPayout(m,'yes',selectedBet);
+  const pyNo  = calcPayout(m,'no', selectedBet);
+
+  const demoActivity = [
+    {user:'@wolf_ivan', side:'yes', amount:500, av:'🐺'},
+    {user:'@fox_ua',    side:'no',  amount:300, av:'🦊'},
+    {user:'@oracle_pro',side:'yes', amount:1000,av:'🧙'},
+    {user:'@tiger88',   side:'no',  amount:200, av:'🐯'},
+  ];
+
+  document.getElementById('market-detail-content').innerHTML = `
+    <div class="md-header">
+      <div class="md-question">${m.q}</div>
+      <div class="md-meta">
+        <span class="md-tag">${m.icon} ${RL[m.room]||m.room}</span>
+        <span class="md-tag">⏱ ${m.deadlineStr||m.t}</span>
+        <span class="md-tag" style="color:${TAG_C[m.tp]||'var(--sub)'};border-color:${TAG_C[m.tp]||'var(--b2)'};">${TAG_L[m.tp]||m.tp}</span>
+        ${m.isUserCreated?'<span class="md-tag" style="color:#a78bfa;border-color:rgba(139,92,246,.3);">👤 Від гравця</span>':''}
+      </div>
+      ${m.sub?`<div style="font-size:12px;color:var(--sub);line-height:1.5;">${m.sub}</div>`:''}
+    </div>
+    <div style="padding:12px 14px;">
+      <div class="md-pool-big">
+        <div class="md-pool-side yes"><div class="md-pool-pct">${pct}%</div><div class="md-pool-label">✅ YES</div><div class="md-pool-gems">${fmtPool(m.poolYes)} 💎</div></div>
+        <div class="md-pool-side no"><div class="md-pool-pct">${noPct}%</div><div class="md-pool-label">❌ NO</div><div class="md-pool-gems">${fmtPool(m.poolNo)} 💎</div></div>
+      </div>
+      <div class="pool-bar-wrap" style="margin-bottom:6px;">
+        <div class="pool-bar-yes" style="width:${pct}%"></div>
+        <div class="pool-bar-no"  style="width:${noPct}%"></div>
+      </div>
+      <div style="text-align:center;font-size:12px;color:var(--sub);">Пул: <b style="color:var(--gold2);">${fmtPool(tot)} 💎</b></div>
+    </div>
+    <div class="md-stats">
+      <div class="md-stat"><div class="md-stat-val">${demoActivity.length+(bet?1:0)}</div><div class="md-stat-lbl">Учасників</div></div>
+      <div class="md-stat"><div class="md-stat-val">${fmtPool(tot)}</div><div class="md-stat-lbl">Пул 💎</div></div>
+      <div class="md-stat"><div class="md-stat-val" style="color:${pct>50?'var(--g)':'var(--r)'};">${pct>50?'YES':'NO'}</div><div class="md-stat-lbl">Фаворит</div></div>
+      <div class="md-stat"><div class="md-stat-val">x${tot>0?((tot*0.98)/(pct>50?m.poolYes:m.poolNo)).toFixed(2):'--'}</div><div class="md-stat-lbl">Множник</div></div>
+    </div>
+    <div style="padding:0 14px 12px;">
+      ${bet && !bet.resolved ? `
+        <div class="bet-pending-wrap">
+          <div class="bet-pending">
+            <div class="bp-side">${bet.side==='yes'?'✅ YES':'❌ NO'}</div>
+            <div class="bp-info"><div class="bp-amount">Ставка: <b>${bet.amount.toLocaleString()} 💎</b></div><div class="bp-payout">Виграш: <b style="color:var(--g)">${bet.payout.toLocaleString()} 💎</b> (x${bet.mult})</div></div>
+            <button class="resolve-btn" onclick="doResolve(${m.id})">⚡ Результат</button>
+          </div>
+          <button class="challenge-btn" onclick="openChallengeSend(${m.id})">🔥 Кинути виклик другу</button>
+        </div>
+      ` : !bet ? `
+        <div class="bet-size-row" style="margin-bottom:8px;">
+          <span class="bet-label">Ставка:</span>
+          ${[50,100,500,1000].map(v=>`<button class="bet-chip${v===selectedBet?' bc-active':''}" onclick="selectedBet=${v};document.querySelectorAll('.bet-chip').forEach(b=>b.classList.toggle('bc-active',+b.textContent===${v}))">${v}</button>`).join('')}
+        </div>
+        <div class="rw">
+          <button class="rwy" onclick="tapCard(${m.id},'yes',event);setTimeout(()=>openMarketDetail(${m.id},'${fromPage||'feed'}'),300)">BUY YES<span class="rwp">x${pyYes.mult}</span></button>
+          <button class="rwn" onclick="tapCard(${m.id},'no',event);setTimeout(()=>openMarketDetail(${m.id},'${fromPage||'feed'}'),300)">BUY NO<span class="rwp">x${pyNo.mult}</span></button>
+        </div>
+      ` : `<div class="bet-done ${bet.result==='win'?'win-done':bet.result==='loss'?'loss-done':'refund-done'}">${bet.result==='win'?'🎯 ВИГРАШ':'❌ ЗАВЕРШЕНО'}</div>`}
+    </div>
+    <div style="padding:0 14px 8px;font-family:var(--f-display);font-size:13px;font-weight:800;color:var(--sub);">📊 АКТИВНІСТЬ</div>
+    <div class="md-bets-list">
+      ${demoActivity.map(a=>`
+        <div class="md-bet-row">
+          <div class="md-bet-av">${a.av}</div>
+          <div class="md-bet-info"><div class="md-bet-user">${a.user}</div><div class="md-bet-side">${a.side==='yes'?'✅ YES':'❌ NO'} · щойно</div></div>
+          <div class="md-bet-amount">${a.amount.toLocaleString()} 💎</div>
+        </div>`).join('')}
+      ${bet?`<div class="md-bet-row" style="border-color:rgba(0,229,160,.3);background:rgba(0,229,160,.05);">
+        <div class="md-bet-av">😎</div>
+        <div class="md-bet-info"><div class="md-bet-user" style="color:var(--g);">@siry_kardynal (ти)</div><div class="md-bet-side">${bet.side==='yes'?'✅ YES':'❌ NO'}</div></div>
+        <div class="md-bet-amount">${bet.amount.toLocaleString()} 💎</div>
+      </div>`:''}
+    </div>
+    <div class="bpad"></div>`;
+  go('market-detail');
+}
+
 // ════ ЩОДЕННА НАГОРОДА ════
 const DAILY_KEY    = 'oraclex_daily_v1';
 const DAILY_REWARD = 250;
@@ -3117,11 +3642,13 @@ function go(page){
         n.classList.add('active');
     });
   }
-  if(page==='markets')  { renderMCards(); switchMarketsTab('markets'); }
-  if(page==='home')     { renderHCards(); updateDailyUI(); renderMissions(); renderPath(); }
-  if(page==='feed')     { renderFeed(); switchFeedTab(currentFeedTab); updateMissionProgress('open_feed'); }
-  if(page==='create')   cfUpdate();
-  if(page==='path')     renderPath();
+  if(page==='markets')       { renderMCards(); switchMarketsTab('markets'); }
+  if(page==='home')          { renderHCards(); updateDailyUI(); renderMissions(); renderPath(); }
+  if(page==='feed')          { renderFeed(); switchFeedTab(currentFeedTab); updateMissionProgress('open_feed'); }
+  if(page==='create')        cfUpdate();
+  if(page==='path')          renderPath();
+  if(page==='btclive')       renderBTCLive();
+  if(page==='market-detail') {} // заповнюється через openMarketDetail()
   // challenge і duel — контент заповнюється окремо перед go()
 }
 
