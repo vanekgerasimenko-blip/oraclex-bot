@@ -10,6 +10,7 @@ const { generateDailyMarkets } = require('./generator');
 const { checkExpiredMarkets }  = require('./oracle');
 const { bot, notifyAdminNewMarkets, notifyAdminWeeklyReport } = require('./bot');
 const { startAPI } = require('./api');
+const { startBTCLive } = require('./btc-live');
 
 // ── Перевірка конфігурації ───────────────
 function checkConfig() {
@@ -63,9 +64,12 @@ async function main() {
   logger.info('🚀 OracleX запускається...');
   checkConfig();
 
-  // 1. Запускаємо API сервер (пункти 1,2,4,5)
+  // 1. Запускаємо API сервер
   const API_PORT = parseInt(process.env.PORT) || 3000;
   startAPI(API_PORT);
+
+  // 2. Запускаємо BTC Live WebSocket
+  startBTCLive();
 
   // 2. Запускаємо Telegram бот
   try {
