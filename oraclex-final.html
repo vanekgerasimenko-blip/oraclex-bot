@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#060a12">
 <meta name="description" content="OracleX — передбачай події, виграй монети">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1535,7 +1535,16 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <div class="ref">
       <div class="ref-t">🔗 Запроси друзів</div>
       <div class="ref-s">За кожного друга <b style="color:var(--g)">+500 💎</b> тобі · <b style="color:var(--blue)">+200 💎</b> йому<br>Він грає → ти отримуєш <b style="color:var(--gold)">10% його монет завжди</b></div>
-      <div class="ref-l" id="ref-link">t.me/UAOracleBot?ref=usr_48210</div>
+      <!-- Посилання + кнопки -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div class="ref-l" id="ref-link" style="flex:1;margin-bottom:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">t.me/OracleX_Yas_or_No_bot?start=usr_48210</div>
+        <button onclick="copyRefLink()" style="flex-shrink:0;background:rgba(14,165,233,.15);border:1px solid rgba(14,165,233,.3);border-radius:9px;padding:8px 12px;color:var(--blue);font-size:11px;font-weight:800;cursor:pointer;font-family:var(--f-display);white-space:nowrap;" id="copy-ref-btn">📋 Копія</button>
+      </div>
+      <!-- Кнопка Telegram Share -->
+      <button onclick="shareToTelegram()" style="width:100%;padding:13px;border-radius:var(--r-btn);border:none;cursor:pointer;background:linear-gradient(135deg,#0088cc,#0099dd);color:#fff;font-family:var(--f-display);font-size:17px;font-weight:900;letter-spacing:.3px;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(0,136,204,.35);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.289c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.932z"/></svg>
+        Поділитись в Telegram
+      </button>
       <div class="ref-st">
         <div class="rs"><div class="rs-n">7</div><div class="rs-l">Запрошено</div></div>
         <div class="rs"><div class="rs-n">3.5K</div><div class="rs-l">Зароблено</div></div>
@@ -3234,11 +3243,14 @@ function submitMarket(){
   renderHCards();
   renderMCards();
 
-  // Показуємо успіх і переходимо на стрічку
   haptic('success');
   burst(0);
   toast(`🎉 Ринок "${cfState.q.slice(0,30)}..." створено!`);
-  updateMissionProgress('create_market'); // місія
+  updateMissionProgress('create_market');
+
+  // Зберігаємо питання для модалки
+  const createdQuestion = cfState.q;
+  const createdMarketId = newId;
 
   // Скидаємо форму
   document.getElementById('cf-q').value = '';
@@ -3250,7 +3262,193 @@ function submitMarket(){
   document.querySelectorAll('.cf-am').forEach((b,i)=>{b.classList.toggle('active',i===0);});
   cfUpdate();
 
-  setTimeout(()=>go('feed'), 800);
+  // Показуємо модалку "Кинути виклик?" замість переходу на feed
+  setTimeout(() => showPostCreateModal(createdMarketId, createdQuestion), 600);
+}
+
+// ════ REFERRAL SHARE ════
+
+const REF_LINK = 'https://t.me/OracleX_Yas_or_No_bot?start=usr_48210';
+const REF_TEXT = '🔮 Грай зі мною в OracleX — передбачай події і виграй монети!\n\nЩодня вже 12 ринків відкрито. Мій реферальний бонус для тебе — +200 💎 одразу при реєстрації 🎁';
+
+/**
+ * Поділитись в Telegram (літачок)
+ */
+function shareToTelegram() {
+  haptic('medium');
+  const text    = encodeURIComponent(REF_TEXT);
+  const url     = encodeURIComponent(REF_LINK);
+  const shareUrl = `https://t.me/share/url?url=${url}&text=${text}`;
+
+  // Telegram WebApp — відкриваємо share нативно
+  if (window.Telegram?.WebApp?.openTelegramLink) {
+    window.Telegram.WebApp.openTelegramLink(shareUrl);
+  } else {
+    // Браузер fallback
+    window.open(shareUrl, '_blank');
+  }
+}
+
+/**
+ * Скопіювати реферальне посилання
+ */
+async function copyRefLink() {
+  haptic('light');
+  const btn = document.getElementById('copy-ref-btn');
+  try {
+    await navigator.clipboard.writeText(REF_LINK);
+    if (btn) { btn.textContent = '✅ Скопійовано'; btn.style.color = 'var(--g)'; }
+    toast('📋 Посилання скопійовано!');
+    setTimeout(() => {
+      if (btn) { btn.textContent = '📋 Копія'; btn.style.color = ''; }
+    }, 2000);
+  } catch {
+    // Fallback для старих браузерів
+    const el = document.createElement('textarea');
+    el.value = REF_LINK;
+    el.style.position = 'fixed';
+    el.style.opacity = '0';
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    if (btn) { btn.textContent = '✅ Скопійовано'; }
+    toast('📋 Посилання скопійовано!');
+    setTimeout(() => { if (btn) btn.textContent = '📋 Копія'; }, 2000);
+  }
+}
+
+// ════ POST-CREATE CHALLENGE MODAL ════
+
+/**
+ * Показати модалку "Кинути виклик другу?" після створення ринку
+ */
+function showPostCreateModal(marketId, question) {
+  haptic('medium');
+  const m = marketMap[marketId];
+  if (!m) { go('feed'); return; }
+
+  const challengeText =
+    `⚔️ Я щойно створив ринок в OracleX!\n\n` +
+    `${m.icon} ${question}\n\n` +
+    `Заб'ємось? Постав проти мене 👇`;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'post-create-modal';
+  overlay.style.cssText = `
+    position:fixed;inset:0;z-index:600;
+    background:rgba(0,0,0,.75);
+    backdrop-filter:blur(6px);
+    display:flex;align-items:flex-end;justify-content:center;
+    animation:fadeIn .2s ease;
+  `;
+
+  overlay.innerHTML = `
+    <div style="
+      width:100%;max-width:430px;
+      background:linear-gradient(180deg,#0e1a2e,#080d18);
+      border-radius:24px 24px 0 0;
+      border:1px solid rgba(139,92,246,.3);
+      padding:24px 20px 36px;
+    ">
+      <!-- Іконка успіху -->
+      <div style="text-align:center;margin-bottom:16px;">
+        <div style="font-size:48px;animation:bob .8s ease-in-out infinite alternate;">🎉</div>
+        <div style="font-family:var(--f-display);font-size:24px;font-weight:900;color:var(--g);margin-top:8px;">Ринок створено!</div>
+        <div style="font-size:12px;color:var(--sub);margin-top:4px;">${m.icon} ${question.slice(0,50)}${question.length>50?'...':''}</div>
+      </div>
+
+      <!-- Пропозиція виклику -->
+      <div style="
+        background:linear-gradient(135deg,rgba(139,92,246,.12),rgba(139,92,246,.04));
+        border:1px solid rgba(139,92,246,.25);
+        border-radius:14px;padding:14px;margin-bottom:14px;text-align:center;
+      ">
+        <div style="font-family:var(--f-display);font-size:16px;font-weight:800;color:#a78bfa;margin-bottom:4px;">⚔️ Кинути виклик другу?</div>
+        <div style="font-size:12px;color:var(--sub);">Поділись і запроси зіграти проти тебе</div>
+      </div>
+
+      <!-- Кнопки share -->
+      <button onclick="shareMarketChallenge(${marketId},'telegram')" style="
+        width:100%;padding:14px;border-radius:var(--r-btn);border:none;cursor:pointer;
+        background:linear-gradient(135deg,#0088cc,#0099dd);
+        color:#fff;font-family:var(--f-display);font-size:17px;font-weight:900;
+        margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;
+        box-shadow:0 4px 16px rgba(0,136,204,.4);
+      ">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.289c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.932z"/></svg>
+        Поділитись в Telegram
+      </button>
+
+      <button onclick="shareMarketChallenge(${marketId},'copy')" style="
+        width:100%;padding:14px;border-radius:var(--r-btn);border:none;cursor:pointer;
+        background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+        color:var(--text);font-family:var(--f-display);font-size:16px;font-weight:800;
+        margin-bottom:8px;
+      ">
+        📋 Скопіювати виклик
+      </button>
+
+      <button onclick="closePostCreateModal()" style="
+        width:100%;padding:13px;border-radius:var(--r-btn);border:none;cursor:pointer;
+        background:transparent;color:var(--sub);
+        font-family:var(--f-display);font-size:15px;font-weight:700;
+      ">
+        Пропустити → До стрічки
+      </button>
+    </div>
+  `;
+
+  // Збереження тексту для share
+  overlay.dataset.challengeText = challengeText;
+  document.body.appendChild(overlay);
+}
+
+function shareMarketChallenge(marketId, method) {
+  haptic('heavy');
+  const overlay = document.getElementById('post-create-modal');
+  const m = marketMap[marketId];
+  if (!m) return;
+
+  const text = overlay?.dataset.challengeText ||
+    `⚔️ Заб'ємось в OracleX?\n${m.icon} ${m.q}\n👇`;
+  const appUrl = `https://t.me/OracleX_Yas_or_No_bot`;
+
+  if (method === 'telegram') {
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(appUrl)}&text=${encodeURIComponent(text)}`;
+    if (window.Telegram?.WebApp?.openTelegramLink) {
+      window.Telegram.WebApp.openTelegramLink(shareUrl);
+    } else {
+      window.open(shareUrl, '_blank');
+    }
+  } else {
+    // Копіювання
+    const fullText = `${text}\n\n${appUrl}`;
+    navigator.clipboard?.writeText(fullText).catch(() => {
+      const el = document.createElement('textarea');
+      el.value = fullText;
+      el.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    });
+    toast('📋 Виклик скопійовано!');
+  }
+
+  setTimeout(() => closePostCreateModal(), 300);
+}
+
+function closePostCreateModal() {
+  haptic('light');
+  const el = document.getElementById('post-create-modal');
+  if (el) {
+    el.style.opacity = '0';
+    el.style.transition = 'opacity .2s';
+    setTimeout(() => { el.remove(); go('feed'); }, 200);
+  } else {
+    go('feed');
+  }
 }
 
 // ════ DUEL / CHALLENGE ENGINE ════
