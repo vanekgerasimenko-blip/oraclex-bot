@@ -18,7 +18,7 @@
    Щоб змінити тему — редагуй тільки тут
 ════════════════════════════════════════ */
 :root{
-  /* ─ Backgrounds ── */
+  /* ── Backgrounds ── */
   --bg:        #060a12;               /* основний фон */
   --card:      rgba(12,21,34,.72);    /* glassmorphism картки */
   --card2:     rgba(16,28,46,.80);    /* вкладені елементи */
@@ -3820,15 +3820,20 @@ const REF_TEXT = '🔮 Грай зі мною в OracleX — передбача�
  */
 function shareToTelegram() {
   haptic('medium');
-  const text    = encodeURIComponent(REF_TEXT);
-  const url     = encodeURIComponent(REF_LINK);
-  const shareUrl = `https://t.me/share/url?url=${url}&text=${text}`;
+  const TGApp = window.Telegram?.WebApp;
+  const text  = `🔮 Грай зі мною в OracleX!\n\nПередбачай події і виграй монети 💎\n\nТвій бонус: +200 💎 одразу!`;
 
-  // Telegram WebApp — відкриваємо share нативно
-  if (window.Telegram?.WebApp?.openTelegramLink) {
-    window.Telegram.WebApp.openTelegramLink(shareUrl);
+  // Нативне вікно вибору чату Telegram
+  if (TGApp?.switchInlineQuery) {
+    TGApp.switchInlineQuery(text, ['users', 'groups', 'channels']);
+    return;
+  }
+
+  // Fallback — t.me/share відкриває список чатів
+  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(REF_LINK)}&text=${encodeURIComponent(text)}`;
+  if (TGApp?.openTelegramLink) {
+    TGApp.openTelegramLink(shareUrl);
   } else {
-    // Браузер fallback
     window.open(shareUrl, '_blank');
   }
 }
@@ -3914,23 +3919,14 @@ function showPostCreateModal(marketId, question) {
 
       <!-- Кнопки share -->
       <button onclick="shareMarketChallenge(${marketId},'telegram')" style="
-        width:100%;padding:14px;border-radius:var(--r-btn);border:none;cursor:pointer;
+        width:100%;padding:16px;border-radius:var(--r-btn);border:none;cursor:pointer;
         background:linear-gradient(135deg,#0088cc,#0099dd);
-        color:#fff;font-family:var(--f-display);font-size:17px;font-weight:900;
-        margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;
-        box-shadow:0 4px 16px rgba(0,136,204,.4);
+        color:#fff;font-family:var(--f-display);font-size:19px;font-weight:900;
+        margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:10px;
+        box-shadow:0 4px 20px rgba(0,136,204,.45);
       ">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.289c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.932z"/></svg>
-        Поділитись в Telegram
-      </button>
-
-      <button onclick="shareMarketChallenge(${marketId},'copy')" style="
-        width:100%;padding:14px;border-radius:var(--r-btn);border:none;cursor:pointer;
-        background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
-        color:var(--text);font-family:var(--f-display);font-size:16px;font-weight:800;
-        margin-bottom:8px;
-      ">
-        📋 Скопіювати виклик
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.289c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.932z"/></svg>
+        ⚔️ Кинути виклик другу
       </button>
 
       <button onclick="closePostCreateModal()" style="
@@ -3954,30 +3950,27 @@ function shareMarketChallenge(marketId, method) {
   const m = marketMap[marketId];
   if (!m) return;
 
-  const text = overlay?.dataset.challengeText ||
-    `⚔️ Заб'ємось в OracleX?\n${m.icon} ${m.q}\n👇`;
+  const text = `⚔️ Заб'ємось в OracleX?\n\n${m.icon} ${m.q}\n\nПостав проти мене! 👇`;
   const appUrl = `https://t.me/OracleX_Yas_or_No_bot`;
+  const fullText = `${text}\n${appUrl}`;
 
-  if (method === 'telegram') {
-    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(appUrl)}&text=${encodeURIComponent(text)}`;
-    if (window.Telegram?.WebApp?.openTelegramLink) {
-      window.Telegram.WebApp.openTelegramLink(shareUrl);
-    } else {
-      window.open(shareUrl, '_blank');
-    }
+  // Пробуємо нативний Telegram share (відкриває вікно як на скріншоті)
+  const TGApp = window.Telegram?.WebApp;
+
+  if (TGApp?.switchInlineQuery) {
+    // Нативне вікно вибору чату — як стандартний Telegram share
+    TGApp.switchInlineQuery(text, ['users', 'groups', 'channels']);
+    setTimeout(() => closePostCreateModal(), 300);
+    return;
+  }
+
+  // Fallback: відкриваємо t.me/share — теж відкриває список чатів
+  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(appUrl)}&text=${encodeURIComponent(text)}`;
+
+  if (TGApp?.openTelegramLink) {
+    TGApp.openTelegramLink(shareUrl);
   } else {
-    // Копіювання
-    const fullText = `${text}\n\n${appUrl}`;
-    navigator.clipboard?.writeText(fullText).catch(() => {
-      const el = document.createElement('textarea');
-      el.value = fullText;
-      el.style.cssText = 'position:fixed;opacity:0';
-      document.body.appendChild(el);
-      el.select();
-      document.execCommand('copy');
-      document.body.removeChild(el);
-    });
-    toast('📋 Виклик скопійовано!');
+    window.open(shareUrl, '_blank');
   }
 
   setTimeout(() => closePostCreateModal(), 300);
