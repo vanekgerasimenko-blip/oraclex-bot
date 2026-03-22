@@ -64,10 +64,10 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
 
-/* ── iOS BOUNCE + ANDROID SCROLL FIX ── */
+/* ── ПОВНИЙ ЕКРАН — Telegram Mini App ── */
 html {
   height: 100%;
-  height: 100dvh; /* dynamic viewport — враховує адресний рядок браузера */
+  height: -webkit-fill-available;
   overflow: hidden;
   overscroll-behavior: none;
 }
@@ -79,11 +79,22 @@ body {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 100vh;
   height: 100dvh;
+  height: -webkit-fill-available;
+  /* Safe area для iPhone notch і Android */
+  padding-top: env(safe-area-inset-top);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
   overflow: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: none;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,160,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,.02) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0;}
 
@@ -107,7 +118,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .tb-title{flex:1;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:900;letter-spacing:.5px;}
 
 /* BOTTOM NAV */
-.bnav{background:rgba(6,10,18,.75);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-top:1px solid rgba(0,229,160,.08);display:flex;flex-shrink:0;z-index:90;padding-bottom:env(safe-area-inset-bottom);}
+.bnav{background:rgba(6,10,18,.75);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-top:1px solid rgba(0,229,160,.08);display:flex;flex-shrink:0;z-index:90;padding-bottom:max(env(safe-area-inset-bottom), 6px);}
 .ni{flex:1;display:flex;flex-direction:column;align-items:center;padding:9px 0 7px;cursor:pointer;gap:3px;transition:opacity var(--dur-fast);}
 .ni-ic{font-size:20px;transition:transform var(--dur-fast) var(--ease),filter var(--dur-fast) var(--ease);}
 .ni-lb{font-size:9px;font-weight:700;color:var(--sub);font-family:var(--f-display);transition:color var(--dur-fast);}
@@ -1638,9 +1649,9 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 <!-- ══════ PROFILE ══════ -->
 <div class="screen" id="s-profile">
   <div class="tb">
-    <div class="back-btn" onclick="go('home')">‹</div>
-    <div class="tb-title">ПРОФІЛЬ</div>
     <div style="width:34px;"></div>
+    <div class="tb-title">👤 ПРОФІЛЬ</div>
+    <div class="bal-pill"><span class="bal-n" id="b-profile">12,500</span> 💎</div>
   </div>
   <div class="sc">
     <div class="ph">
@@ -3607,12 +3618,18 @@ function renderFeedByTab(tab){
 // ════ GLOBAL UI ════
 function updBal(){
   const f = gems.toLocaleString();
-  // ВИПРАВЛЕНО: використовуємо кешовані елементи замість getElementById кожного разу
+
+  // Оновлюємо всі кешовані елементи
   BAL_ELS.forEach(el => { if(el) el.textContent = f; });
+
+  // Додатково — всі .bal-n в DOM (якщо якийсь не в кеші)
+  document.querySelectorAll('.bal-n').forEach(el => { el.textContent = f; });
+
   if(AIR_EL) AIR_EL.textContent = `${f} 💎 → ~${Math.round(gems/10).toLocaleString()} SORCL`;
   if(LB_EL)  LB_EL.textContent  = f;
+
   GAMES_ELS.forEach(el => { if(el) el.textContent = games; });
-  // Зберігаємо стан після кожної зміни балансу
+
   saveState();
 }
 
@@ -4270,10 +4287,20 @@ function renderBattles(){
 
 // ════ MARKETS TAB SWITCH ════
 // Init Telegram WebApp if available
-if(TG){ TG.ready(); TG.expand(); }
+// ── Telegram WebApp — повний екран ──────
+if(TG){
+  TG.ready();
+  TG.expand(); // розгортаємо на весь екран
+  // requestFullscreen якщо підтримується
+  if(TG.requestFullscreen) TG.requestFullscreen();
+  // Забороняємо закриття свайпом
+  if(TG.disableClosingConfirmation) TG.disableClosingConfirmation();
+  if(TG.setHeaderColor) TG.setHeaderColor('#060a12');
+  if(TG.setBackgroundColor) TG.setBackgroundColor('#060a12');
+}
 
 // ── Кешуємо DOM елементи балансу один раз ──
-const BAL_ELS   = ['b1','b2','b3','pb'].map(id=>document.getElementById(id)).filter(Boolean);
+const BAL_ELS   = ['b1','b2','b3','pb','b-profile','path-bal','btc-bal'].map(id=>document.getElementById(id)).filter(Boolean);
 const GAMES_ELS = ['pg','h-games','lb-g'].map(id=>document.getElementById(id)).filter(Boolean);
 const AIR_EL    = document.getElementById('air-b');
 const LB_EL     = document.getElementById('lb-b');
