@@ -22,7 +22,7 @@ let priceHistory  = [];     // масив {price, ts} за поточний ра
 let clients       = new Set(); // підключені Mini App клієнти
 
 const ROUND_MS    = 5 * 60 * 1000; // 5 хвилин
-const WS_PORT     = parseInt(process.env.WS_PORT) || 3001;
+const WS_PORT     = parseInt(process.env.WS_PORT || '3001');
 
 // ── Binance WebSocket ─────────────────────
 let binanceWS = null;
