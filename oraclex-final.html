@@ -101,6 +101,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 /* SCREENS */
 .screen{display:none;flex-direction:column;height:100%;height:100dvh;position:relative;z-index:1;}
 .screen.active{display:flex;animation:fu var(--dur-mid) var(--ease);}
+@keyframes scaleIn{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
 @keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
 /* TOPBAR */
@@ -529,6 +530,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.25);
   color:var(--gold2);
 }
+.voted-ov{
   position:absolute;inset:0;z-index:5;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   background:rgba(6,10,18,.6);backdrop-filter:blur(4px);
@@ -1443,9 +1445,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 
   <!-- ВКЛАДКИ СТРІЧКИ -->
   <div class="feed-tabs">
-    <div class="feed-tab active" id="ftab-new"    onclick="switchFeedTab('new')">🆕 Нові</div>
-    <div class="feed-tab"        id="ftab-active" onclick="switchFeedTab('active')">🔥 Активні</div>
+    <div class="feed-tab active" id="ftab-new"     onclick="switchFeedTab('new')">🆕 Нові</div>
+    <div class="feed-tab"        id="ftab-active"  onclick="switchFeedTab('active')">🔥 Активні</div>
     <div class="feed-tab"        id="ftab-history" onclick="switchFeedTab('history')">📜 Історія</div>
+    <div class="feed-tab"        id="ftab-mine"    onclick="switchFeedTab('mine')">✏️ Мої</div>
   </div>
 
   <!-- Основна стрічка (нові / активні) -->
@@ -1988,72 +1991,207 @@ const FEE = 0.02;           // 2% комісія платформи
 const WIN_THRESHOLD = 0.45; // 55% шанс виграшу (для демо)
 
 // Початкові пули — симулюють вже зроблені ставки інших гравців
-const MARKETS = [
-  {id:0, room:'ua',    q:'ДОЛАР ПО 45?',
-   sub:'Курс USD в Приват24 перевищить 45.00 грн до кінця тижня?',
-   poolYes:13200, poolNo:7100, t:'02:14:45', tp:'flash',
-   bg:'linear-gradient(160deg,#1a3a1a,#0d1f0d)', icon:'💵'},
+// ════════════════════════════════════════
+//  СИСТЕМА РИНКІВ — 100 ринків на добу
+//  Генеруються детерміновано по даті
+//  Таймери живі 24/7
+// ════════════════════════════════════════
 
-  {id:1, room:'ua',    q:'ШАХТАР ПЕРЕМОЖЕ?',
-   sub:'Шахтар переможе у наступному матчі Прем\'єр-ліги?',
-   poolYes:5200, poolNo:3800, t:'3д 12:00', tp:'new',
-   bg:'linear-gradient(160deg,#0a1f3a,#061220)', icon:'⚽'},
-
-  {id:2, room:'ua',    q:'НАФТОГАЗ ПІДНІМЕ ЦІНИ?',
-   sub:'Нафтогаз підвищить ціни на газ для населення цього місяця?',
-   poolYes:8400, poolNo:3600, t:'5д 00:00', tp:'hot',
-   bg:'linear-gradient(160deg,#3a1a0a,#1a0800)', icon:'🔥'},
-
-  {id:3, room:'global',q:'BITCOIN $100,000?',
-   sub:'BTC перевищить позначку $100,000 до кінця цього місяця?',
-   poolYes:32000, poolNo:15000, t:'08:30:00', tp:'mega',
-   bg:'linear-gradient(160deg,#1a1000,#5c3d00,#1a1000)', icon:'₿'},
-
-  {id:4, room:'global',q:'FED ЗНИЗИТЬ СТАВКУ?',
-   sub:'Федеральний резерв США знизить ставку на наступному засіданні?',
-   poolYes:9100, poolNo:11200, t:'3д 00:00', tp:'hot',
-   bg:'linear-gradient(160deg,#0a0a2a,#2a1050)', icon:'🏛️'},
-
-  {id:5, room:'global',q:'ЗОЛОТО ПРОБЄ $2,600?',
-   sub:'Ціна на золото перевищить $2,600 за тройську унцію?',
-   poolYes:6300, poolNo:5900, t:'7д 00:00', tp:'new',
-   bg:'linear-gradient(160deg,#2a1f00,#6b5200,#2a1800)', icon:'🥇'},
-
-  {id:6, room:'crypto',q:'BTC $90K СЬОГОДНІ?',
-   sub:'Bitcoin закриє торговий день вище позначки $90,000?',
-   poolYes:22400, poolNo:8600, t:'00:45:00', tp:'flash',
-   bg:'linear-gradient(160deg,#0d0d1f,#0d2040)', icon:'📈'},
-
-  {id:7, room:'crypto',q:'ETH ДОСЯГНЕ $4,000?',
-   sub:'Ethereum досягне позначки $4,000 до кінця кварталу?',
-   poolYes:7800, poolNo:10700, t:'18д 00:00', tp:'hot',
-   bg:'linear-gradient(160deg,#0a1530,#1a1060)', icon:'🔷'},
-
-  {id:8, room:'crypto',q:'GPT-5 ЦЬОГО КВАРТАЛУ?',
-   sub:'OpenAI офіційно випустить GPT-5 до кінця поточного кварталу?',
-   poolYes:29000, poolNo:10000, t:'45д 00:00', tp:'mega',
-   bg:'linear-gradient(160deg,#0a0a1a,#2a1540)', icon:'🤖'},
-
-  {id:9, room:'us',    q:'ТРАМП ПІДПИШЕ ЗАКОН?',
-   sub:'Трамп підпише новий торговий закон до кінця поточного тижня?',
-   poolYes:7200, poolNo:11500, t:'4д 00:00', tp:'hot',
-   bg:'linear-gradient(160deg,#1a0a0a,#2a0808)', icon:'🇺🇸'},
-
-  {id:10,room:'eu',    q:'ЄВРО ДО ПАРИТЕТУ?',
-   sub:'EUR/USD впаде нижче позначки 1.00 до кінця поточного кварталу?',
-   poolYes:1800, poolNo:6400, t:'15д 00:00', tp:'hot',
-   bg:'linear-gradient(160deg,#001a10,#004530)', icon:'💶'},
-
-  {id:11,room:'sports',q:'РЕАЛ ВИГРАЄ ЛЧ?',
-   sub:'Реал Мадрид переможе у наступному матчі Ліги Чемпіонів?',
-   poolYes:19800, poolNo:11600, t:'4д 20:45', tp:'new',
-   bg:'linear-gradient(160deg,#001520,#003a50)', icon:'🏟️'},
+// ── Генератор 100 ринків на день ─────────
+const MARKET_TEMPLATES = [
+  // UA
+  {room:'ua', q:'ДОЛАР ПО {X} ГРН?', sub:'Курс USD перевищить {X} грн до кінця тижня?', icon:'💵', bg:'linear-gradient(160deg,#1a3a1a,#0d1f0d)', tp:'flash', minVal:42, maxVal:48, step:0.5},
+  {room:'ua', q:'ШАХТАР ПЕРЕМОЖЕ?', sub:'Шахтар переможе у наступному матчі Прем\'єр-ліги?', icon:'⚽', bg:'linear-gradient(160deg,#0a1f3a,#061220)', tp:'hot'},
+  {room:'ua', q:'НАФТОГАЗ ПІДНІМЕ ЦІНИ?', sub:'Нафтогаз підвищить ціни на газ цього місяця?', icon:'🔥', bg:'linear-gradient(160deg,#3a1a0a,#1a0800)', tp:'hot'},
+  {room:'ua', q:'ДИНАМО ВИГРАЄ ВДОМА?', sub:'Динамо Київ переможе у домашньому матчі?', icon:'🏟️', bg:'linear-gradient(160deg,#001a30,#003060)', tp:'new'},
+  {room:'ua', q:'ЗЕЛЕНСЬКИЙ ВИСТУПИТЬ ООН?', sub:'Зеленський виступить на Генеральній Асамблеї ООН цього тижня?', icon:'🇺🇦', bg:'linear-gradient(160deg,#001530,#002a50)', tp:'mega'},
+  {room:'ua', q:'ГРИВНЯ ЗМІЦНИТЬСЯ?', sub:'Гривня зміцниться до 40 грн/$ до кінця місяця?', icon:'💰', bg:'linear-gradient(160deg,#0a2a0a,#0a3a0a)', tp:'hot'},
+  {room:'ua', q:'УКРЕНЕРГО ВІДІМКНЕ СВІТЛО?', sub:'Укренерго оголосить планові відключення на наступному тижні?', icon:'⚡', bg:'linear-gradient(160deg,#1a1a00,#2a2a00)', tp:'flash'},
+  // CRYPTO
+  {room:'crypto', q:'BTC $100K ЦЬОГО МІСЯЦЯ?', sub:'Bitcoin перевищить $100,000 до кінця місяця?', icon:'₿', bg:'linear-gradient(160deg,#1a1000,#5c3d00)', tp:'mega'},
+  {room:'crypto', q:'ETH ДОСЯГНЕ ${X}K?', sub:'Ethereum досягне ${X},000 до кінця кварталу?', icon:'🔷', bg:'linear-gradient(160deg,#0a1530,#1a1060)', tp:'hot', minVal:3, maxVal:6, step:0.5},
+  {room:'crypto', q:'SOL ПО $200?', sub:'Solana досягне позначки $200 протягом 7 днів?', icon:'◎', bg:'linear-gradient(160deg,#0d0d2a,#1a0060)', tp:'hot'},
+  {room:'crypto', q:'BNB ПАДІННЯ?', sub:'Binance Coin впаде нижче $300 цього тижня?', icon:'🟡', bg:'linear-gradient(160deg,#1a1500,#2a2000)', tp:'flash'},
+  {room:'crypto', q:'КРИПТО РИНОК ЗРОСТЕ?', sub:'Капіталізація крипторинку перевищить $3 трлн цього місяця?', icon:'📈', bg:'linear-gradient(160deg,#001a10,#003a20)', tp:'mega'},
+  {room:'crypto', q:'XRP ВИГРАЄ СУД?', sub:'Ripple виграє апеляцію проти SEC до кінця кварталу?', icon:'🔺', bg:'linear-gradient(160deg,#1a0030,#2a0050)', tp:'hot'},
+  {room:'crypto', q:'DOGE $0.5?', sub:'Dogecoin досягне $0.5 протягом місяця?', icon:'🐕', bg:'linear-gradient(160deg,#1a1200,#2a1800)', tp:'new'},
+  // GLOBAL
+  {room:'global', q:'FED ЗНИЗИТЬ СТАВКУ?', sub:'Федеральний резерв знизить ставку на наступному засіданні?', icon:'🏛️', bg:'linear-gradient(160deg,#0a0a2a,#2a1050)', tp:'mega'},
+  {room:'global', q:'ЗОЛОТО $3,000?', sub:'Ціна золота перевищить $3,000 за унцію?', icon:'🥇', bg:'linear-gradient(160deg,#2a1f00,#6b5200)', tp:'hot'},
+  {room:'global', q:'НАФТА BRENT $100?', sub:'Нафта Brent перевищить $100 за барель цього кварталу?', icon:'🛢️', bg:'linear-gradient(160deg,#0a0a0a,#2a1a00)', tp:'hot'},
+  {room:'global', q:'GPT-5 ЦЬОГО КВАРТАЛУ?', sub:'OpenAI офіційно випустить GPT-5 до кінця кварталу?', icon:'🤖', bg:'linear-gradient(160deg,#0a0a1a,#2a1540)', tp:'mega'},
+  {room:'global', q:'APPLE $300?', sub:'Акції Apple досягнуть $300 до кінця кварталу?', icon:'🍎', bg:'linear-gradient(160deg,#1a0010,#3a0020)', tp:'hot'},
+  {room:'global', q:'TESLA $400?', sub:'Акції Tesla підніметься до $400 цього місяця?', icon:'🚗', bg:'linear-gradient(160deg,#0a1a00,#102a00)', tp:'new'},
+  // US
+  {room:'us', q:'ТРАМП ПІДПИШЕ УКАЗ?', sub:'Трамп підпише новий executive order цього тижня?', icon:'🇺🇸', bg:'linear-gradient(160deg,#1a0a0a,#2a0808)', tp:'hot'},
+  {room:'us', q:'S&P500 НОВИЙ РЕКОРД?', sub:'Індекс S&P500 досягне нового максимуму цього місяця?', icon:'📊', bg:'linear-gradient(160deg,#001a00,#003000)', tp:'mega'},
+  {room:'us', q:'БЕЗРОБІТТЯ ЗРОСТЕ?', sub:'Рівень безробіття в США перевищить 4.5% у наступному звіті?', icon:'📉', bg:'linear-gradient(160deg,#1a0000,#2a0010)', tp:'hot'},
+  // EU
+  {room:'eu', q:'ЄВРО ДО ПАРИТЕТУ?', sub:'EUR/USD впаде нижче 1.00 до кінця кварталу?', icon:'💶', bg:'linear-gradient(160deg,#001a10,#004530)', tp:'hot'},
+  {room:'eu', q:'ЄЦБ ЗНИЗИТЬ СТАВКУ?', sub:'Європейський центробанк знизить ставку на наступному засіданні?', icon:'🏦', bg:'linear-gradient(160deg,#000a20,#001a40)', tp:'mega'},
+  // SPORTS
+  {room:'sports', q:'РЕАЛ ВИГРАЄ ЛЧ?', sub:'Реал Мадрид переможе у фіналі Ліги Чемпіонів?', icon:'🏆', bg:'linear-gradient(160deg,#001520,#003a50)', tp:'mega'},
+  {room:'sports', q:'МАНЧЕСТЕР СІТІ ЧЕМПІОН?', sub:'Манчестер Сіті стане чемпіоном АПЛ цього сезону?', icon:'🏟️', bg:'linear-gradient(160deg,#001a30,#003060)', tp:'hot'},
+  {room:'sports', q:'ФОРМУЛА-1: ФЕРСТАППЕН?', sub:'Макс Ферстаппен виграє наступний Гран-прі Формули-1?', icon:'🏎️', bg:'linear-gradient(160deg,#1a0000,#3a0000)', tp:'flash'},
+  {room:'sports', q:'НБА: ЛЕЙКЕРС В ПЛЕЙ-ОФ?', sub:'LA Lakers вийдуть у плей-оф НБА цього сезону?', icon:'🏀', bg:'linear-gradient(160deg,#3a0a00,#5a1000)', tp:'hot'},
+  {room:'sports', q:'БОКС: КО В ПЕРШОМУ РАУНДІ?', sub:'Головний бій завершиться нокаутом у першому раунді?', icon:'🥊', bg:'linear-gradient(160deg,#1a0000,#2a0000)', tp:'flash'},
 ];
+
+// ── Генерація ринків для поточного дня ───
+function generateDailyMarkets() {
+  const today = new Date();
+  const seed  = today.getFullYear() * 10000 + (today.getMonth()+1) * 100 + today.getDate();
+
+  // Детермінований RNG
+  function rng(n) {
+    let x = Math.sin(seed + n) * 10000;
+    return x - Math.floor(x);
+  }
+
+  const markets = [];
+  let id = 0;
+
+  // Генеруємо 100 ринків рівномірно протягом дня
+  // Кожен з'являється в свій час (96 авто + 4 резерв)
+  const dayStart = new Date(today);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayMs = 24 * 60 * 60 * 1000;
+
+  for(let i = 0; i < 100; i++) {
+    const tmpl = MARKET_TEMPLATES[Math.floor(rng(i * 7) * MARKET_TEMPLATES.length)];
+
+    // Час появи ринку протягом дня
+    const appearMs  = Math.floor(rng(i * 3 + 1) * dayMs);
+    const appearAt  = new Date(dayStart.getTime() + appearMs);
+
+    // Дедлайн: від 30 хв до 7 днів
+    const deadlineHours = [0.5, 1, 2, 3, 6, 12, 24, 48, 72, 168][Math.floor(rng(i*5+2) * 10)];
+    const deadline  = new Date(appearAt.getTime() + deadlineHours * 3600000);
+
+    // Початкові пули (від 500 до 50000)
+    const basePool  = Math.floor(rng(i*11+3) * 49500) + 500;
+    const yesRatio  = 0.3 + rng(i*13+4) * 0.4; // 30%-70%
+    const poolYes   = Math.floor(basePool * yesRatio);
+    const poolNo    = Math.floor(basePool * (1 - yesRatio));
+
+    // Значення для шаблонів з {X}
+    let q = tmpl.q, sub = tmpl.sub;
+    if(tmpl.minVal !== undefined) {
+      const val = (tmpl.minVal + Math.floor(rng(i*17+5) * ((tmpl.maxVal - tmpl.minVal) / tmpl.step)) * tmpl.step).toFixed(1);
+      q   = q.replace('{X}', val);
+      sub = sub.replace(/{X}/g, val);
+    }
+
+    const now      = Date.now();
+    const isActive = now >= appearAt.getTime() && now < deadline.getTime();
+    const isExpired = now >= deadline.getTime();
+
+    // Живий таймер — скільки залишилось
+    const msLeft = deadline.getTime() - now;
+    const t = msLeft <= 0 ? 'Завершено' : formatTimeLeft(msLeft);
+
+    if(!isExpired || Math.random() < 0.1) { // Показуємо і частину завершених
+      markets.push({
+        id,
+        room:     tmpl.room,
+        q, sub,
+        icon:     tmpl.icon,
+        bg:       tmpl.bg,
+        tp:       tmpl.tp,
+        poolYes, poolNo,
+        t,
+        deadline: deadline.toISOString(),
+        appearAt: appearAt.toISOString(),
+        status:   isExpired ? 'expired' : 'open',
+        isUserCreated: false,
+        resolveChecked: false, // ← кнопка Результат натиснута?
+      });
+      id++;
+    }
+  }
+
+  // Сортуємо — активні спочатку, потім нові
+  markets.sort((a, b) => {
+    if(a.status === 'expired' && b.status !== 'expired') return 1;
+    if(a.status !== 'expired' && b.status === 'expired') return -1;
+    return new Date(a.deadline) - new Date(b.deadline);
+  });
+
+  return markets;
+}
+
+function formatTimeLeft(ms) {
+  if(ms <= 0) return 'Завершено';
+  const d = Math.floor(ms / 86400000);
+  const h = Math.floor((ms % 86400000) / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  if(d > 0) return `${d}д ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+// ── Живі таймери 24/7 ────────────────────
+let timerInterval = null;
+
+function startLiveTimers() {
+  if(timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    const now = Date.now();
+    D.forEach(m => {
+      if(!m.deadline) return;
+      const msLeft = new Date(m.deadline).getTime() - now;
+      m.t = formatTimeLeft(msLeft);
+      if(msLeft <= 0 && m.status === 'open') m.status = 'expired';
+    });
+    // Оновлюємо таймери на екрані без перерендеру
+    document.querySelectorAll('[data-timer-id]').forEach(el => {
+      const m = marketMap[+el.dataset.timerId];
+      if(m) el.textContent = m.t;
+    });
+  }, 1000);
+}
+
+// ── Система центів (як Polymarket) ────────
+// Ціна в центах = вірогідність * 100
+// YES 70¢ = 70% шанс YES, виграш x1.43
+function calcCents(m, side) {
+  const tot = m.poolYes + m.poolNo;
+  if(tot === 0) return { yes: 50, no: 50 };
+  const yesCents = Math.round(m.poolYes / tot * 100);
+  const noCents  = 100 - yesCents;
+  return side === 'yes' ? yesCents : noCents;
+}
+
+// ── Користувацькі ринки (до 20 на день) ──
+const USER_MARKETS_KEY = 'oraclex_user_markets_v1';
+
+function getUserMarkets() {
+  try {
+    const raw  = localStorage.getItem(USER_MARKETS_KEY);
+    const data = raw ? JSON.parse(raw) : null;
+    const today = new Date().toDateString();
+    if(data && data.date === today) return data;
+    return { date: today, markets: [], count: 0 };
+  } catch { return { date: new Date().toDateString(), markets: [], count: 0 }; }
+}
+
+function saveUserMarket(market) {
+  const data = getUserMarkets();
+  if(data.count >= 20) return { error: 'daily_limit', limit: 20 };
+  market.isUserCreated = true;
+  market.userCreatedAt = new Date().toISOString();
+  data.markets.unshift(market);
+  data.count++;
+  localStorage.setItem(USER_MARKETS_KEY, JSON.stringify(data));
+  return { success: true, remaining: 20 - data.count };
+}
+
+// ── Ініціалізація ринків ──────────────────
+const MARKETS = generateDailyMarkets();
+const D = MARKETS.map(m => ({...m}));
 
 // Ставки гравця {marketId: {side:'yes'|'no', amount:N}}
 const myBets = {};
-// Копія ринків (будемо мутувати пули при ставках)
-const D = MARKETS.map(m => ({...m}));
 
 // ════ ГЛОБАЛЬНИЙ СТАН (всі змінні в одному місці) ════
 const STATE = {
@@ -2163,6 +2301,15 @@ function resolveMarket(m){
 }
 
 // ════ HAPTIC FEEDBACK ════
+// ── XSS: санітизація тексту від гравця ──
+function escapeHTML(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
 const TG = window.Telegram?.WebApp;
 function haptic(type='light'){
   if(TG?.HapticFeedback){
@@ -2219,12 +2366,12 @@ function makeFeedCard(m, h){
       <div class="sb-meta">
         <div class="sb-cat">${RL[m.room]||m.room}</div>
         <div class="card-type-tag" style="border-color:${TAG_C[m.tp]};color:${TAG_C[m.tp]};">${TAG_L[m.tp]}</div>
-        <div class="sb-timer"><div class="tdot"></div>${m.t}</div>
+        <div class="sb-timer"><div class="tdot"></div><span data-timer-id="${m.id}">${m.t}</span></div>
       </div>
       <!-- контент знизу -->
       <div class="sb-content">
-        <div class="sq">${m.q}</div>
-      <div class="ss">${m.sub}</div>
+        <div class="sq">${escapeHTML(m.q)}</div>
+      <div class="ss">${escapeHTML(m.sub)}</div>
 
       <!-- ПУЛИ (серце Parimutuel) -->
       <div class="pool-section">
@@ -2254,16 +2401,16 @@ function makeFeedCard(m, h){
         <span class="bet-bal">Баланс: <b>${gems.toLocaleString()}</b> 💎</span>
       </div>
 
-      <!-- КНОПКИ YES / NO з динамічним множником -->
+      <!-- КНОПКИ YES / NO з динамічним множником і центами -->
       <div class="rw" id="rw-${m.id}">
         ${bet
           ? betResultHTML(m, bet)
           : `<button class="rwy" aria-label="Купити YES" onclick="feedVote(${m.id},'yes',this)">
-               BUY YES
+               BUY YES <span style="background:rgba(0,0,0,.2);border-radius:5px;padding:1px 5px;font-size:11px;">${calcCents(m,'yes')}¢</span>
                <span class="rwp">${pyYes.isRefund ? '↩ повернення' : `x${pyYes.mult} · +${(pyYes.payout-selectedBet).toLocaleString()} 💎`}</span>
              </button>
              <button class="rwn" aria-label="Купити NO" onclick="feedVote(${m.id},'no',this)">
-               BUY NO
+               BUY NO <span style="background:rgba(0,0,0,.2);border-radius:5px;padding:1px 5px;font-size:11px;">${calcCents(m,'no')}¢</span>
                <span class="rwp">${pyNo.isRefund ? '↩ повернення' : `x${pyNo.mult} · +${(pyNo.payout-selectedBet).toLocaleString()} 💎`}</span>
              </button>`
         }
@@ -2290,9 +2437,23 @@ function betResultHTML(m, bet){
     if(bet.result==='win')    return `<div class="bet-done win-done">🎯 ВИГРАШ!<div class="bet-done-sub">+${(bet.payout-bet.amount).toLocaleString()} 💎 прибуток (x${bet.mult})</div></div>`;
     return `<div class="bet-done loss-done">❌ ПРОГРАШ<div class="bet-done-sub">−${bet.amount} 💎 пішли переможцям</div></div>`;
   }
+
   const sideLabel  = bet.side==='yes' ? '✅ YES' : '❌ NO';
   const refundNote = bet.isRefund ? '<div style="font-size:10px;opacity:.7;margin-top:3px;">⚠️ Поверн. якщо немає протилежних ставок</div>' : '';
-  const hasDuel = duels.some(d => d.marketId === m.id);
+  const hasDuel    = duels.some(d => d.marketId === m.id);
+  const isExpired  = m.status === 'expired' || new Date(m.deadline) <= new Date();
+  const checked    = m.resolveChecked;
+
+  // Кнопка результату — одноразова
+  let resolveBtn;
+  if(checked) {
+    resolveBtn = `<button class="resolve-btn" disabled style="opacity:.35;cursor:not-allowed;background:rgba(255,255,255,.1);border:1px solid var(--b2);color:var(--sub);">✓ Перевірено</button>`;
+  } else if(isExpired) {
+    resolveBtn = `<button class="resolve-btn" onclick="doResolve(${m.id})">⚡ Результат</button>`;
+  } else {
+    resolveBtn = `<button class="resolve-btn" disabled style="opacity:.5;cursor:not-allowed;">⏱ Іще йде</button>`;
+  }
+
   return `
     <div class="bet-pending-wrap">
       <div class="bet-pending">
@@ -2302,12 +2463,11 @@ function betResultHTML(m, bet){
           <div class="bp-payout">Виграш: <b style="color:var(--g)">${bet.payout.toLocaleString()} 💎</b> (x${bet.mult})</div>
           ${refundNote}
         </div>
-        <button class="resolve-btn" onclick="doResolve(${m.id})">⚡ Результат</button>
+        ${resolveBtn}
       </div>
-      ${hasDuel
+      ${!checked ? (hasDuel
         ? `<button class="challenge-btn" onclick="openDuel(${m.id})" style="background:rgba(0,229,160,.1);border-color:rgba(0,229,160,.3);color:var(--g);">⚔️ Переглянути дуель</button>`
-        : `<button class="challenge-btn" onclick="openChallengeSend(${m.id})">🔥 Кинути виклик другу</button>`
-      }
+        : `<button class="challenge-btn" onclick="openChallengeSend(${m.id})">🔥 Кинути виклик другу</button>`) : ''}
     </div>`;
 }
 
@@ -2414,12 +2574,29 @@ function doResolve(id){
   haptic('medium');
   const m = marketMap[id];
   if(!m) return;
+
+  // ← Перевіряємо чи вже натискали
+  if(m.resolveChecked) {
+    toast('Результат вже перевірено!', true);
+    return;
+  }
+
+  // Перевіряємо чи ринок завершений
+  if(m.status === 'open' && new Date(m.deadline) > new Date()) {
+    const msLeft = new Date(m.deadline) - Date.now();
+    toast(`⏱ Ринок ще активний! Залишилось: ${formatTimeLeft(msLeft)}`, true);
+    return;
+  }
+
   const result = resolveMarket(m);
   if(!result) return;
 
   const bet = myBets[id];
   bet.resolved = true;
   bet.result   = result.type;
+
+  // ← Позначаємо як перевірений (кнопка стає неактивною)
+  m.resolveChecked = true;
 
   // Записуємо в історію
   addToHistory({
@@ -2437,21 +2614,67 @@ function doResolve(id){
   });
 
   updBal();
-  if(result.type==='win'){
-    haptic('success');
-    burst(result.profit);
-    toast(`🎯 ВИГРАШ! +${result.profit.toLocaleString()} 💎 прибуток`);
-    updateMissionProgress('wins'); // трекінг перемог
-  } else if(result.type==='refund'){
-    haptic('medium');
-    toast(`↩ Ставку повернено: +${result.amount} 💎`);
-  } else {
-    haptic('error');
-    toast(`❌ Програш. Монети пішли переможцям`, true);
-  }
 
-  const rw = document.getElementById(`rw-${id}`);
-  if(rw) rw.outerHTML = `<div class="rw" id="rw-${id}">${betResultHTML(m, bet)}</div>`;
+  // ← Показуємо спливаюче вікно результату на 1.5 секунди
+  showResultPopup(result, m);
+
+  if(result.type === 'win')    updateMissionProgress('wins');
+
+  // Оновлюємо UI після закриття попапу
+  setTimeout(() => {
+    const rw = document.getElementById(`rw-${id}`);
+    if(rw) rw.outerHTML = `<div class="rw" id="rw-${id}">${betResultHTML(m, bet)}</div>`;
+    renderHCards();
+    renderMCards();
+  }, 1600);
+}
+
+// ── Спливаюче вікно результату (1.5 сек) ─
+function showResultPopup(result, m) {
+  const existing = document.getElementById('result-popup');
+  if(existing) existing.remove();
+
+  const isWin     = result.type === 'win';
+  const isRefund  = result.type === 'refund';
+  const color     = isWin ? 'var(--g)' : isRefund ? 'var(--gold2)' : 'var(--r)';
+  const emoji     = isWin ? '🎯' : isRefund ? '↩' : '❌';
+  const title     = isWin ? 'ВИГРАШ!' : isRefund ? 'ПОВЕРНЕННЯ' : 'ПРОГРАШ';
+  const amount    = isWin ? `+${result.profit?.toLocaleString()} 💎` : isRefund ? `↩${result.amount?.toLocaleString()} 💎` : `-${m ? (myBets[m.id]?.amount||0).toLocaleString() : '?'} 💎`;
+
+  const popup = document.createElement('div');
+  popup.id = 'result-popup';
+  popup.style.cssText = `
+    position:fixed;inset:0;z-index:1000;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.6);backdrop-filter:blur(8px);
+    animation:fadeIn .15s ease;
+  `;
+  popup.innerHTML = `
+    <div style="
+      background:var(--card);
+      border:2px solid ${color};
+      border-radius:24px;
+      padding:40px 32px;
+      text-align:center;
+      box-shadow:0 0 60px ${color}44;
+      animation:scaleIn .2s var(--ease);
+    ">
+      <div style="font-size:64px;margin-bottom:12px;">${emoji}</div>
+      <div style="font-family:var(--f-display);font-size:36px;font-weight:900;color:${color};letter-spacing:1px;">${title}</div>
+      <div style="font-family:var(--f-display);font-size:24px;font-weight:800;margin-top:8px;color:${color};">${amount}</div>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+  haptic(isWin ? 'success' : 'error');
+  if(isWin) burst(result.profit || 0);
+
+  // Закриваємо через 1.5 секунди
+  setTimeout(() => {
+    popup.style.opacity = '0';
+    popup.style.transition = 'opacity .3s';
+    setTimeout(() => popup.remove(), 300);
+  }, 1500);
 }
 
 function resetFeed(){
@@ -2497,35 +2720,39 @@ function buildCard(m){
   const pct=yesPct(m), noPct=100-pct, tot=totalPool(m);
   const pyYes=calcPayout(m,'yes',selectedBet);
   const pyNo =calcPayout(m,'no', selectedBet);
-  return`<div class="pcard" style="position:relative;">
+  const yesCents = calcCents(m,'yes');
+  const noCents  = calcCents(m,'no');
+  const isExpired = m.status==='expired' || (m.deadline && new Date(m.deadline)<=new Date());
+
+  return`<div class="pcard" style="position:relative;${isExpired?'opacity:.75;':''}">
     <span class="ptag ${tagCls[m.tp]}">${TAG_L[m.tp]}</span>
+    ${isExpired?'<span style="position:absolute;top:8px;right:8px;background:rgba(255,48,87,.2);border:1px solid rgba(255,48,87,.4);border-radius:6px;padding:2px 7px;font-size:9px;font-weight:800;color:var(--r);">🔴 ЗАВЕРШЕНО</span>':''}
     <div class="pcb" onclick="openMarketDetail(${m.id},'markets')" style="cursor:pointer;">
-      <div class="pcm"><div class="pcc">${m.icon}</div><div class="pcq">${m.q}</div></div>
-      <div class="pcs">${m.sub}</div>
-      <!-- POOL -->
+      <div class="pcm"><div class="pcc">${m.icon}</div><div class="pcq">${escapeHTML(m.q)}</div></div>
+      <div class="pcs">${escapeHTML(m.sub)}</div>
       <div class="pool-section" style="margin-bottom:8px;">
         <div class="pool-bar-wrap" style="height:6px;">
           <div class="pool-bar-yes" style="width:${pct}%"></div>
           <div class="pool-bar-no"  style="width:${noPct}%"></div>
         </div>
         <div class="pool-labels" style="margin-bottom:2px;">
-          <div class="pool-lbl-yes" style="gap:4px;"><span class="pool-pct-y" style="font-size:12px;">✅ ${pct}%</span><span class="pool-sum">${fmtPool(m.poolYes)} 💎</span></div>
-          <div class="pool-lbl-no"  style="gap:4px;"><span class="pool-sum">${fmtPool(m.poolNo)} 💎</span><span class="pool-pct-n" style="font-size:12px;">❌ ${noPct}%</span></div>
+          <div class="pool-lbl-yes" style="gap:4px;"><span class="pool-pct-y" style="font-size:12px;">✅ ${yesCents}¢</span><span class="pool-sum">${fmtPool(m.poolYes)} 💎</span></div>
+          <div class="pool-lbl-no"  style="gap:4px;"><span class="pool-sum">${fmtPool(m.poolNo)} 💎</span><span class="pool-pct-n" style="font-size:12px;">❌ ${noCents}¢</span></div>
         </div>
         <div class="pool-total" style="font-size:9px;">Пул: <b>${fmtPool(tot)} 💎</b></div>
       </div>
     </div>
     ${bet
       ? `<div style="padding:0 14px 12px;">${betResultHTML(m,bet)}</div>`
-      : `<div class="yn">
-          <button class="yb yes-b" onclick="tapCard(${m.id},'yes',event)">BUY YES<span class="ys">${pyYes.isRefund?'↩ поверн.':`x${pyYes.mult}`}</span></button>
-          <button class="yb no-b"  onclick="tapCard(${m.id},'no', event)">BUY NO<span class="ys">${pyNo.isRefund?'↩ поверн.':`x${pyNo.mult}`}</span></button>
-        </div>`
+      : !isExpired ? `<div class="yn">
+          <button class="yb yes-b" onclick="tapCard(${m.id},'yes',event)">BUY YES ${yesCents}¢<span class="ys">${pyYes.isRefund?'↩ поверн.':`x${pyYes.mult}`}</span></button>
+          <button class="yb no-b"  onclick="tapCard(${m.id},'no', event)">BUY NO ${noCents}¢<span class="ys">${pyNo.isRefund?'↩ поверн.':`x${pyNo.mult}`}</span></button>
+        </div>` : '<div style="padding:0 14px 12px;font-size:12px;color:var(--sub);text-align:center;">Ринок завершено — ставки не приймаються</div>'
     }
     <div class="timer-row2">
-      <div class="tv">⏱ ${m.t}</div>
+      <div class="tv">⏱ <span data-timer-id="${m.id}">${m.t}</span></div>
       <div class="ch" onclick="openMarketDetail(${m.id},'markets')" style="color:var(--blue);">📊 Детально</div>
-      <div class="ch" onclick="doResolve(${m.id})">⚡ Результат</div>
+      ${bet && !bet.resolved && !m.resolveChecked && isExpired ? `<div class="ch" onclick="doResolve(${m.id})" style="color:var(--g);">⚡ Результат</div>` : ''}
     </div>
   </div>`;
 }
@@ -2941,8 +3168,8 @@ function openPathModal(){
 
   haptic('medium');
 
-  // Беремо 3 відкриті ринки без ставок
-  const available = D.filter(m => !myBets[m.id]).slice(0, 4);
+  // Беремо відкриті ринки без ставок (не завершені)
+  const available = D.filter(m => !myBets[m.id] && m.status !== 'expired' && new Date(m.deadline) > new Date()).slice(0, 4);
 
   if(available.length === 0){
     toast('Немає доступних ринків! Перевір стрічку.', true);
@@ -2970,7 +3197,7 @@ function openPathModal(){
     const pct = yesPct(m);
     return `
       <div class="path-market-item">
-        <div class="path-market-q">${m.icon} ${m.q}</div>
+        <div class="path-market-q">${m.icon} ${escapeHTML(m.q)}</div>
         <div class="path-market-meta">YES ${pct}% · NO ${100-pct}% · Пул: ${fmtPool(totalPool(m))} 💎</div>
         <div class="path-market-btns">
           <button class="path-yes-btn" onclick="makePathBet(${m.id},'yes')">✅ YES</button>
@@ -3069,7 +3296,9 @@ function makePathBet(marketId, side){
 //  BTC LIVE — WebSocket клієнт (Binance)
 // ════════════════════════════════════════
 
-const BINANCE_WS = 'wss://stream.binance.com:9443/ws/btcusdt@trade';
+const BINANCE_WS  = 'wss://stream.binance.com:9443/ws/btcusdt@trade';
+const COINGECKO_API = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd';
+let btcFallbackInterval = null;
 
 let btcWS         = null;
 let btcPrice      = null;
@@ -3084,11 +3313,19 @@ function connectBTCLive() {
   if (btcWS) { try { btcWS.close(); } catch{} btcWS = null; }
   btcWS = new WebSocket(BINANCE_WS);
 
-  btcWS.onopen  = () => updateBTCStatus('🟢 Підключено до Binance');
-  btcWS.onerror = () => updateBTCStatus('🔴 Помилка з\'єднання');
+  btcWS.onopen  = () => {
+    updateBTCStatus('🟢 Підключено до Binance');
+    // Зупиняємо fallback якщо WS запрацював
+    if (btcFallbackInterval) { clearInterval(btcFallbackInterval); btcFallbackInterval = null; }
+  };
+  btcWS.onerror = () => {
+    updateBTCStatus('🟡 WS недоступний — використовую CoinGecko...');
+    startBTCFallback();
+  };
   btcWS.onclose = () => {
     updateBTCStatus('🟡 Перепідключення...');
-    setTimeout(connectBTCLive, 3000);
+    startBTCFallback();
+    setTimeout(connectBTCLive, 8000);
   };
   btcWS.onmessage = (e) => {
     try {
@@ -3103,6 +3340,25 @@ function connectBTCLive() {
       drawBTCChart();
     } catch {}
   };
+}
+
+function startBTCFallback() {
+  if (btcFallbackInterval) return; // вже запущено
+  btcFallbackInterval = setInterval(async () => {
+    try {
+      const res  = await fetch(COINGECKO_API);
+      const data = await res.json();
+      const price = data?.bitcoin?.usd;
+      if (!price) return;
+      btcPrice = price;
+      btcHistory.push({ price, ts: Date.now() });
+      if (btcHistory.length > 300) btcHistory.shift();
+      if (!btcTarget) startBTCRound();
+      updateBTCDisplay();
+      drawBTCChart();
+      updateBTCStatus('🟡 CoinGecko (30с затримка)');
+    } catch { updateBTCStatus('🔴 Немає даних'); }
+  }, 30000); // CoinGecko — раз на 30 сек (rate limit)
 }
 
 function startBTCRound() {
@@ -3310,14 +3566,14 @@ function openMarketDetail(marketId, fromPage) {
 
   document.getElementById('market-detail-content').innerHTML = `
     <div class="md-header">
-      <div class="md-question">${m.q}</div>
+      <div class="md-question">${escapeHTML(m.q)}</div>
       <div class="md-meta">
         <span class="md-tag">${m.icon} ${RL[m.room]||m.room}</span>
         <span class="md-tag">⏱ ${m.deadlineStr||m.t}</span>
         <span class="md-tag" style="color:${TAG_C[m.tp]||'var(--sub)'};border-color:${TAG_C[m.tp]||'var(--b2)'};">${TAG_L[m.tp]||m.tp}</span>
         ${m.isUserCreated?'<span class="md-tag" style="color:#a78bfa;border-color:rgba(139,92,246,.3);">👤 Від гравця</span>':''}
       </div>
-      ${m.sub?`<div style="font-size:12px;color:var(--sub);line-height:1.5;">${m.sub}</div>`:''}
+      ${m.sub?`<div style="font-size:12px;color:var(--sub);line-height:1.5;">${escapeHTML(m.sub)}</div>`:''}
     </div>
     <div style="padding:12px 14px;">
       <div class="md-pool-big">
@@ -3541,7 +3797,7 @@ function renderHistory(){
       <div class="hist-card">
         <div class="hist-icon ${h.result}">${icons[h.result]||'⏳'}</div>
         <div class="hist-body">
-          <div class="hist-q">${h.icon||'📊'} ${h.question}</div>
+          <div class="hist-q">${h.icon||'📊'} ${escapeHTML(h.question)}</div>
           <div class="hist-meta">${sideLabel} · Ставка: ${h.amount.toLocaleString()} 💎${h.mult ? ` · x${h.mult}` : ''}</div>
           <div class="hist-result ${h.result}">${results[h.result]||'ОЧІКУЄ'}</div>
         </div>
@@ -3560,9 +3816,7 @@ let currentFeedTab = 'new';
 
 function switchFeedTab(tab){
   currentFeedTab = tab;
-
-  // Оновлюємо вкладки
-  ['new','active','history'].forEach(t => {
+  ['new','active','history','mine'].forEach(t => {
     document.getElementById(`ftab-${t}`)?.classList.toggle('active', t === tab);
   });
 
@@ -3573,11 +3827,68 @@ function switchFeedTab(tab){
     feedScroll.style.display  = 'none';
     feedHistory.style.display = 'block';
     renderHistory();
+  } else if(tab === 'mine'){
+    feedScroll.style.display  = 'none';
+    feedHistory.style.display = 'block';
+    renderUserMarketsTab();
   } else {
     feedScroll.style.display  = '';
     feedHistory.style.display = 'none';
     renderFeedByTab(tab);
   }
+}
+
+function renderUserMarketsTab() {
+  const el = document.getElementById('history-content');
+  if(!el) return;
+
+  const data    = getUserMarkets();
+  const markets = data.markets;
+  const limit   = 20;
+  const used    = data.count;
+
+  if(markets.length === 0){
+    el.innerHTML = `
+      <div class="hist-empty">
+        <div class="hist-empty-ico">✏️</div>
+        <div class="hist-empty-t">Немає твоїх ринків</div>
+        <div class="hist-empty-s">Ти можеш створити до ${limit} ринків на день.<br>Натисни ＋ щоб створити!</div>
+        <button onclick="go('create')" style="margin-top:12px;padding:12px 24px;border-radius:var(--r-btn);border:none;cursor:pointer;background:var(--g);color:#03120a;font-family:var(--f-display);font-size:16px;font-weight:900;">＋ Створити ринок</button>
+      </div>`;
+    return;
+  }
+
+  let html = `
+    <div style="background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-family:var(--f-display);font-size:15px;font-weight:800;color:#a78bfa;">✏️ Мої ринки сьогодні</div>
+      <div style="font-family:var(--f-display);font-size:14px;font-weight:800;color:var(--gold2);">${used}/${limit}</div>
+    </div>`;
+
+  html += markets.map(m => {
+    const pct = Math.round((m.poolYes||(0)) / ((m.poolYes||0)+(m.poolNo||0)||1) * 100);
+    const status = m.status === 'expired' ? '🔴 Завершено' : '🟢 Активний';
+    return `
+      <div class="hist-card" onclick="openMarketDetail(${m.id||0},'feed')" style="cursor:pointer;">
+        <div class="hist-icon pending">${m.icon}</div>
+        <div class="hist-body">
+          <div class="hist-q">${escapeHTML(m.q)}</div>
+          <div class="hist-meta">${status} · YES ${pct}% / NO ${100-pct}%</div>
+          <div class="hist-result pending">Пул: ${((m.poolYes||0)+(m.poolNo||0)).toLocaleString()} 💎</div>
+        </div>
+        <div class="hist-right">
+          <div class="hist-time">${m.t||'--'}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  if(used < limit){
+    html += `
+      <button onclick="go('create')" style="width:100%;margin-top:8px;padding:14px;border-radius:var(--r-btn);border:none;cursor:pointer;background:linear-gradient(135deg,#4c1d95,#7c3aed);color:#fff;font-family:var(--f-display);font-size:16px;font-weight:900;">
+        ＋ Створити ринок (залишилось ${limit-used})
+      </button>`;
+  }
+
+  el.innerHTML = html;
 }
 
 function renderFeedByTab(tab){
@@ -3630,6 +3941,9 @@ function updBal(){
 
   GAMES_ELS.forEach(el => { if(el) el.textContent = games; });
 
+  // Оновлюємо серію
+  document.querySelectorAll('#sc1,#sc2').forEach(el => { if(el) el.textContent = streak; });
+
   saveState();
 }
 
@@ -3646,8 +3960,18 @@ function toast(msg, bad=false){
   }, 2000); // 2 секунди
 }
 
+function stopBTCLive(){
+  if(btcTimerInt){ clearInterval(btcTimerInt); btcTimerInt = null; }
+  if(btcFallbackInterval){ clearInterval(btcFallbackInterval); btcFallbackInterval = null; }
+  if(btcWS){ try{ btcWS.close(); }catch{} btcWS = null; }
+  btcTarget = null; btcRoundEnd = null;
+}
+
 function go(page){
   haptic('light');
+  // Зупиняємо BTC якщо виходимо з btclive
+  const currentScreen = document.querySelector('.screen.active');
+  if(currentScreen?.id === 's-btclive' && page !== 'btclive') stopBTCLive();
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('s-'+page).classList.add('active');
   // Оновлюємо активну кнопку навбару
@@ -3661,7 +3985,7 @@ function go(page){
   }
   if(page==='markets')       { renderMCards(); switchMarketsTab('markets'); }
   if(page==='home')          { renderHCards(); updateDailyUI(); renderMissions(); renderPath(); }
-  if(page==='feed')          { renderFeed(); switchFeedTab(currentFeedTab); updateMissionProgress('open_feed'); }
+  if(page==='feed')          { switchFeedTab(currentFeedTab); updateMissionProgress('open_feed'); }
   if(page==='create')        cfUpdate();
   if(page==='path')          renderPath();
   if(page==='btclive')       renderBTCLive();
@@ -3745,17 +4069,30 @@ function cfAmount(btn, amount){
 
 function submitMarket(){
   haptic('heavy');
+
+  // ← Перевірка денного ліміту (20 ринків)
+  const userData = getUserMarkets();
+  if(userData.count >= 20){
+    haptic('error');
+    toast('❌ Ліміт на сьогодні — 20 ринків! Повертайся завтра.', true);
+    return;
+  }
+
   if(gems < cfState.amount){
     haptic('error');
     toast(`Недостатньо монет! Потрібно ${cfState.amount} 💎`, true);
     return;
   }
 
-  // Списуємо монети (перша ставка)
   gems -= cfState.amount;
 
-  // ВИПРАВЛЕНО: безпечний унікальний ID щоб не було дублікатів
   const newId = D.reduce((max, m) => Math.max(max, m.id), -1) + 1;
+
+  // Дедлайн з вибору
+  const deadlineHoursMap = {'1г 00:00':1,'3г 00:00':3,'6г 00:00':6,'12г 00:00':12,'1д 00:00':24,'3д 00:00':72,'7д 00:00':168};
+  const dlHours  = deadlineHoursMap[cfState.deadline] || 24;
+  const deadline = new Date(Date.now() + dlHours * 3600000).toISOString();
+
   const newMarket = {
     id: newId,
     room: cfState.room,
@@ -3764,22 +4101,27 @@ function submitMarket(){
     poolYes: cfState.side==='yes' ? cfState.amount : 0,
     poolNo:  cfState.side==='no'  ? cfState.amount : 0,
     t: cfState.deadline,
+    deadline,
     tp: 'new',
     bg: 'linear-gradient(160deg,#0a1a2a,#060a12)',
     icon: cfState.icon,
     isUserCreated: true,
     creator: MY_USERNAME,
+    status: 'open',
+    resolveChecked: false,
   };
   D.push(newMarket);
-  marketMap[newId] = newMarket; // ВИПРАВЛЕНО: додаємо в кеш
+  marketMap[newId] = newMarket;
 
-  // Записуємо ставку автора
+  // ← Зберігаємо в денний список
+  saveUserMarket({...newMarket});
+
   myBets[newId] = {
     side: cfState.side,
     amount: cfState.amount,
-    payout: cfState.amount, // буде перерахований коли з'являться опоненти
+    payout: cfState.amount,
     mult: 1.0,
-    isRefund: true, // поки немає другої сторони
+    isRefund: true,
   };
 
   updBal();
@@ -4067,7 +4409,7 @@ function openChallengeReceive(duelId){
     <div class="ch-title">⚔️ ВИКЛИК</div>
     <div class="ch-avatar">${m.icon}</div>
     <div class="ch-from">від <b style="color:#a78bfa">${duel.challenger}</b></div>
-    <div class="ch-question">${m.q}</div>
+    <div class="ch-question">${escapeHTML(m.q)}</div>
     <div class="ch-bet-info">
       ${duel.challenger} поставив <b>${duel.challengerSide === 'yes' ? '✅ YES' : '❌ NO'}</b> · <b>${duel.amount.toLocaleString()} 💎</b><br>
       <span style="margin-top:4px;display:block;">Якщо приймеш — ставиш <b>${oppSideEmoji}</b> на <b>${duel.amount.toLocaleString()} 💎</b></span>
@@ -4164,7 +4506,7 @@ function openDuel(marketId){
       </div>
     </div>
     <div class="duel-question-box">
-      <div class="duel-q">${m.icon} ${m.q}</div>
+      <div class="duel-q">${m.icon} ${escapeHTML(m.q)}</div>
       <div class="duel-pool">Банк дуелі: <b>${pot.toLocaleString()} 💎</b></div>
     </div>
     <div class="duel-timer">
@@ -4264,7 +4606,7 @@ function renderBattles(){
           <div class="battle-players">${d.challenger} <span style="color:var(--sub)">vs</span> ${opponent}</div>
           <div class="battle-status ${statusCls}">${statusLabel}</div>
         </div>
-        <div class="battle-q">${m.icon} ${m.q}</div>
+        <div class="battle-q">${m.icon} ${escapeHTML(m.q)}</div>
         <div class="battle-bottom">
           <div class="battle-sides">
             <span class="battle-yes">✅ ${d.challengerSide==='yes'?d.challenger:opponent}</span>
@@ -4351,7 +4693,10 @@ function loadState(){
     if(typeof data.games  === 'number') games  = data.games;
     if(typeof data.streak === 'number') streak = data.streak;
     if(data.myBets && typeof data.myBets === 'object'){
-      Object.assign(myBets, data.myBets);
+      // JSON перетворює ключі на рядки — повертаємо числові ключі
+      Object.entries(data.myBets).forEach(([k, v]) => {
+        myBets[parseInt(k, 10)] = v;
+      });
     }
   } catch(e) {
     console.warn('OracleX: loadState failed', e.message);
@@ -4372,6 +4717,7 @@ renderMissions();        // місії дня
 renderPath();            // шлях провісника
 updateDailyUI();         // оновлюємо стан щоденної нагороди
 switchFeedTab('new');    // початкова вкладка стрічки
+startLiveTimers();       // живі таймери 24/7
 </script>
 </body>
 </html>
